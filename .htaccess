@@ -1,7 +1,15 @@
 <IfModule mod_rewrite.c>
+    <IfModule mod_negotiation.c>
+        Options -Indexes
+    </IfModule>
+
     RewriteEngine On
 
-    # Direct all requests into the public folder
+    # Handle Authorization Header
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+    # Redirect all traffic to the public directory
     RewriteCond %{REQUEST_URI} !^/public/
-    RewriteRule ^(.*)$ public/$1 [L]
+    RewriteRule ^(.*)$ public/$1 [L,QSA]
 </IfModule>
