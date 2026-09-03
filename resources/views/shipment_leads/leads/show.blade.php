@@ -16,16 +16,17 @@
         @else
             <span class="badge badge-not-replied fs-6 px-3 py-2"><i class="fa-solid fa-circle-exclamation me-1"></i> Not Replied</span>
         @endif
+    </div>
 </div>
 
 @if($lead->ai_summary)
-<div class="card border-0 shadow-sm mb-3 bg-white border-start border-4 border-primary">
+<div class="card border-0 shadow-sm mb-4 bg-white border-start border-4 border-primary">
     <div class="card-body p-3">
-        <div class="d-flex align-items-center mb-1">
+        <div class="d-flex align-items-center mb-2">
             <span class="badge bg-primary me-2"><i class="fa-solid fa-wand-magic-sparkles me-1"></i> AI Email Summary</span>
             <small class="text-muted">Inquiry Overview</small>
         </div>
-        <p class="m-0 text-dark font-weight-bold fs-6">{{ $lead->ai_summary }}</p>
+        <p class="m-0 text-dark fw-semibold fs-6" style="line-height: 1.6;">{{ html_entity_decode(strip_tags($lead->ai_summary), ENT_QUOTES | ENT_HTML5, 'UTF-8') }}</p>
     </div>
 </div>
 @endif

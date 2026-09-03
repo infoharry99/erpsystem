@@ -290,19 +290,27 @@ class ShipmentExtractionService
 
         $details = [];
         if (!empty($data['container_type'])) {
-            $details[] = "Equipment: " . $data['container_type'];
+            $details[] = "Equipment: " . $this->cleanText($data['container_type']);
         }
         if (!empty($data['weight'])) {
-            $details[] = "Weight: " . $data['weight'];
+            $details[] = "Weight: " . $this->cleanText($data['weight']);
         }
         if (!empty($data['pallets'])) {
-            $details[] = "Pallets: " . $data['pallets'];
+            $details[] = "Pallets: " . $this->cleanText($data['pallets']);
         }
 
         if (!empty($details)) {
             $summary .= ' ' . implode(', ', $details) . '.';
         }
 
-        return $summary;
+        return $this->cleanText($summary);
+    }
+
+    protected function cleanText(?string $str): string
+    {
+        if (empty($str)) return '';
+        $text = html_entity_decode(strip_tags($str), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $text = preg_replace('/\s+/', ' ', $text);
+        return trim($text);
     }
 }
