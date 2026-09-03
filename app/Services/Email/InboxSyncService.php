@@ -22,6 +22,9 @@ class InboxSyncService
 
     public function syncInbox(EmailAccount $account): array
     {
+        @ini_set('memory_limit', '512M');
+        @set_time_limit(300);
+
         $stats = [
             'checked' => 0,
             'imported' => 0,
@@ -40,77 +43,90 @@ class InboxSyncService
                 throw new \Exception("Inbox folder '{$inboxName}' not found for account {$account->email}");
             }
 
-            $messages = $folder->query()->all()->get();
+            // Query recent emails or limit to latest 150 to prevent memory exhaustion
+            try {
+                $messages = $folder->query()->since(now()->subDays(30))->get();
+                if ($messages->count() === 0) {
+                    $messages = $folder->query()->all()->limit(100)->get();
+                }
+            } catch (\Exception $e) {
+                $messages = $folder->query()->all()->limit(100)->get();
+            }
+
             $stats['checked'] = count($messages);
 
             foreach ($messages as $msg) {
-                $messageId = $msg->getMessageId();
-                $uid = $msg->getUid();
+                try {
+                    $messageId = $msg->getMessageId();
+                    $uid = $msg->getUid();
 
-                $exists = Email::where('email_account_id', $account->id)
-                    ->where(function ($query) use ($messageId, $uid) {
-                        if ($messageId) {
-                            $query->where('message_id', $messageId);
-                        }
-                        if ($uid) {
-                            $query->orWhere('imap_uid', $uid);
-                        }
-                    })
-                    ->exists();
+                    $exists = Email::where('email_account_id', $account->id)
+                        ->where(function ($query) use ($messageId, $uid) {
+                            if ($messageId) {
+                                $query->where('message_id', $messageId);
+                            }
+                            if ($uid) {
+                                $query->orWhere('imap_uid', $uid);
+                            }
+                        })
+                        ->exists();
 
-                if ($exists) {
-                    $stats['skipped']++;
-                    continue;
-                }
-
-                $from = $msg->getFrom()[0] ?? null;
-                $fromEmail = $from ? $from->mail : 'unknown@domain.com';
-                $fromName = $from ? $this->decodeHeader($from->personal ?: $fromEmail) : 'Unknown';
-
-                $to = $msg->getTo()[0] ?? null;
-                $toEmail = $to ? $to->mail : $account->email;
-
-                $subject = $this->decodeHeader($msg->getSubject() ?: '(No Subject)');
-                $bodyHtml = $msg->getHTMLBody();
-                $bodyText = $msg->getTextBody();
-                $receivedDate = $msg->getDate() ? Carbon::parse($msg->getDate()->toString()) : now();
-
-                $emailRecord = Email::create([
-                    'email_account_id' => $account->id,
-                    'message_id' => $messageId,
-                    'imap_uid' => $uid,
-                    'thread_id' => $msg->getThreadId() ?? $messageId,
-                    'direction' => 'incoming',
-                    'from_name' => $fromName,
-                    'from_email' => $fromEmail,
-                    'to_email' => $toEmail,
-                    'cc' => json_encode($msg->getCc()),
-                    'bcc' => json_encode($msg->getBcc()),
-                    'subject' => $subject,
-                    'body_html' => $bodyHtml,
-                    'body_text' => $bodyText,
-                    'in_reply_to' => $msg->getInReplyTo(),
-                    'references' => is_array($msg->getReferences()) ? implode(' ', $msg->getReferences()) : $msg->getReferences(),
-                    'received_at' => $receivedDate,
-                    'has_attachments' => $msg->hasAttachments(),
-                ]);
-
-                $stats['imported']++;
-
-                if ($msg->hasAttachments()) {
-                    foreach ($msg->getAttachments() as $attachment) {
-                        EmailAttachment::create([
-                            'email_id' => $emailRecord->id,
-                            'filename' => $attachment->getName() ?: 'attachment',
-                            'mime_type' => $attachment->getMimeType(),
-                            'file_size' => $attachment->getSize() ?: 0,
-                        ]);
+                    if ($exists) {
+                        $stats['skipped']++;
+                        continue;
                     }
-                }
 
-                $lead = $this->leadService->createLeadFromEmail($emailRecord);
-                if ($lead) {
-                    $stats['leads_created']++;
+                    $from = $msg->getFrom()[0] ?? null;
+                    $fromEmail = $from ? $from->mail : 'unknown@domain.com';
+                    $fromName = $from ? $this->decodeHeader($from->personal ?: $fromEmail) : 'Unknown';
+
+                    $to = $msg->getTo()[0] ?? null;
+                    $toEmail = $to ? $to->mail : $account->email;
+
+                    $subject = $this->decodeHeader($msg->getSubject() ?: '(No Subject)');
+                    $bodyHtml = $msg->getHTMLBody();
+                    $bodyText = $msg->getTextBody();
+                    $receivedDate = $msg->getDate() ? Carbon::parse($msg->getDate()->toString()) : now();
+
+                    $emailRecord = Email::create([
+                        'email_account_id' => $account->id,
+                        'message_id' => $messageId,
+                        'imap_uid' => $uid,
+                        'thread_id' => $msg->getThreadId() ?? $messageId,
+                        'direction' => 'incoming',
+                        'from_name' => $fromName,
+                        'from_email' => $fromEmail,
+                        'to_email' => $toEmail,
+                        'cc' => json_encode($msg->getCc()),
+                        'bcc' => json_encode($msg->getBcc()),
+                        'subject' => $subject,
+                        'body_html' => $bodyHtml,
+                        'body_text' => $bodyText,
+                        'in_reply_to' => $msg->getInReplyTo(),
+                        'references' => is_array($msg->getReferences()) ? implode(' ', $msg->getReferences()) : $msg->getReferences(),
+                        'received_at' => $receivedDate,
+                        'has_attachments' => $msg->hasAttachments(),
+                    ]);
+
+                    $stats['imported']++;
+
+                    if ($msg->hasAttachments()) {
+                        foreach ($msg->getAttachments() as $attachment) {
+                            EmailAttachment::create([
+                                'email_id' => $emailRecord->id,
+                                'filename' => $attachment->getName() ?: 'attachment',
+                                'mime_type' => $attachment->getMimeType(),
+                                'file_size' => $attachment->getSize() ?: 0,
+                            ]);
+                        }
+                    }
+
+                    $lead = $this->leadService->createLeadFromEmail($emailRecord);
+                    if ($lead) {
+                        $stats['leads_created']++;
+                    }
+                } catch (\Exception $e) {
+                    Log::warning("Skipped message during inbox sync: " . $e->getMessage());
                 }
             }
 
