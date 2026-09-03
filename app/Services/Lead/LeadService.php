@@ -9,10 +9,14 @@ use Illuminate\Support\Facades\Log;
 class LeadService
 {
     protected ShipmentExtractionService $extractionService;
+    protected OpenAiLeadExtractionService $openAiService;
 
-    public function __construct(ShipmentExtractionService $extractionService)
-    {
+    public function __construct(
+        ShipmentExtractionService $extractionService,
+        OpenAiLeadExtractionService $openAiService
+    ) {
         $this->extractionService = $extractionService;
+        $this->openAiService = $openAiService;
     }
 
     public function createLeadFromEmail(Email $email): ?Lead
@@ -24,16 +28,45 @@ class LeadService
 
         $subject = $email->subject ?? '';
         $bodyText = $email->body_text ?: strip_tags($email->body_html ?? '');
-        $extracted = $this->extractionService->extract(
-            $subject,
-            $bodyText,
-            $email->from_name,
-            $email->from_email
-        );
 
-        // Smart Genuine Lead Qualification Check
-        if (!$this->isShipmentInquiry($extracted, $subject, $bodyText)) {
-            Log::info("Skipped non-shipment email ID #{$email->id} (Subject: '{$subject}')");
+        $extracted = null;
+        $isGenuineLead = false;
+
+        // 1. Try AI-powered OpenAI Extraction if API Key is configured
+        if ($this->openAiService->isConfigured()) {
+            $aiResult = $this->openAiService->extract(
+                $subject,
+                $bodyText,
+                $email->from_name,
+                $email->from_email
+            );
+
+            if ($aiResult !== null) {
+                if (empty($aiResult['is_shipment_lead'])) {
+                    Log::info("OpenAI classified email ID #{$email->id} (Subject: '{$subject}') as NORMAL/NON-INQUIRY EMAIL. Skipping lead creation.");
+                    return null;
+                }
+
+                $isGenuineLead = true;
+                $extracted = $aiResult;
+            }
+        }
+
+        // 2. Fallback to Rule-based Extraction Service if OpenAI was not available or failed
+        if ($extracted === null) {
+            $extracted = $this->extractionService->extract(
+                $subject,
+                $bodyText,
+                $email->from_name,
+                $email->from_email
+            );
+
+            $isGenuineLead = $this->isShipmentInquiry($extracted, $subject, $bodyText);
+        }
+
+        // Skip non-shipment / normal emails
+        if (!$isGenuineLead) {
+            Log::info("Rule filter classified email ID #{$email->id} (Subject: '{$subject}') as NON-INQUIRY. Skipping lead creation.");
             return null;
         }
 
@@ -74,7 +107,7 @@ class LeadService
     }
 
     /**
-     * Determine if an incoming email is a genuine shipment inquiry.
+     * Determine if an incoming email is a genuine shipment inquiry (Rule-based Fallback).
      */
     public function isShipmentInquiry(array $extracted, string $subject, string $bodyText): bool
     {
