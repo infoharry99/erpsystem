@@ -26,7 +26,7 @@
             <span class="badge bg-primary me-2"><i class="fa-solid fa-wand-magic-sparkles me-1"></i> AI Email Summary</span>
             <small class="text-muted">Inquiry Overview</small>
         </div>
-        <p class="m-0 text-dark fw-semibold fs-6" style="line-height: 1.6;">{{ html_entity_decode(strip_tags($lead->ai_summary), ENT_QUOTES | ENT_HTML5, 'UTF-8') }}</p>
+        <div class="m-0 text-dark fw-semibold fs-6" style="line-height: 1.8;">{!! nl2br(e(html_entity_decode(strip_tags($lead->ai_summary), ENT_QUOTES | ENT_HTML5, 'UTF-8'))) !!}</div>
     </div>
 </div>
 @endif

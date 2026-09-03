@@ -254,63 +254,55 @@ class ShipmentExtractionService
 
     protected function generateSummary(array $data, string $subject): string
     {
-        $parts = [];
         $type = match ($data['shipment_type'] ?? '') {
             'sea_fcl' => 'Sea FCL',
             'sea_lcl' => 'Sea LCL',
             'air_freight' => 'Air Freight',
             'road_freight' => 'Road Freight',
             'reefer' => 'Reefer Container',
-            default => 'Freight Inquiry',
+            default => 'General Freight',
         };
 
-        $parts[] = "{$type} quotation request";
+        $commodity = !empty($data['commodity']) ? $this->cleanShortText($data['commodity'], 50) : 'General Cargo';
+        $origin = !empty($data['origin']) ? $this->cleanShortText($data['origin'], 50) : (!empty($data['pol']) ? $this->cleanShortText($data['pol'], 35) : null);
+        $destination = !empty($data['destination']) ? $this->cleanShortText($data['destination'], 50) : (!empty($data['pod']) ? $this->cleanShortText($data['pod'], 35) : null);
+        $incoterms = !empty($data['incoterms']) ? strtoupper($data['incoterms']) : null;
 
-        if (!empty($data['commodity'])) {
-            $parts[] = "for {$data['commodity']}";
-        }
+        $lines = [];
+        $lines[] = "• Inquiry Mode & Cargo: {$type} inquiry for {$commodity}";
 
-        $route = '';
-        if (!empty($data['origin']) || !empty($data['pol'])) {
-            $route .= 'from ' . ($data['origin'] ?: $data['pol']);
-        }
-        if (!empty($data['destination']) || !empty($data['pod'])) {
-            $route .= ($route ? ' ' : '') . 'to ' . ($data['destination'] ?: $data['pod']);
-        }
-
-        if ($route) {
-            $parts[] = $route;
-        }
-
-        if (!empty($data['incoterms'])) {
-            $parts[] = "on {$data['incoterms']} terms";
+        if ($origin || $destination) {
+            $routeStr = "• Route: " . ($origin ?: 'TBD') . " ➔ " . ($destination ?: 'TBD');
+            if ($incoterms) {
+                $routeStr .= " ({$incoterms} Terms)";
+            }
+            $lines[] = $routeStr;
+        } elseif ($incoterms) {
+            $lines[] = "• Terms: {$incoterms}";
         }
 
-        $summary = ucfirst(implode(' ', $parts)) . '.';
+        $specs = [];
+        if (!empty($data['container_type'])) $specs[] = "Equipment: " . $this->cleanShortText($data['container_type'], 40);
+        if (!empty($data['weight'])) $specs[] = "Weight: " . $this->cleanShortText($data['weight'], 30);
+        if (!empty($data['pallets'])) $specs[] = "Pallets: " . $this->cleanShortText($data['pallets'], 30);
 
-        $details = [];
-        if (!empty($data['container_type'])) {
-            $details[] = "Equipment: " . $this->cleanText($data['container_type']);
-        }
-        if (!empty($data['weight'])) {
-            $details[] = "Weight: " . $this->cleanText($data['weight']);
-        }
-        if (!empty($data['pallets'])) {
-            $details[] = "Pallets: " . $this->cleanText($data['pallets']);
+        if (!empty($specs)) {
+            $lines[] = "• Shipment Specs: " . implode(" | ", $specs);
         }
 
-        if (!empty($details)) {
-            $summary .= ' ' . implode(', ', $details) . '.';
-        }
-
-        return $this->cleanText($summary);
+        return implode("\n", $lines);
     }
 
-    protected function cleanText(?string $str): string
+    protected function cleanShortText(?string $str, int $limit = 60): string
     {
         if (empty($str)) return '';
         $text = html_entity_decode(strip_tags($str), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $text = preg_replace('/(Best Regards|Thanks|Subject:|From:|Cc:|To:|Phone:|Email:).*/is', '', $text);
         $text = preg_replace('/\s+/', ' ', $text);
-        return trim($text);
+        $text = trim($text);
+        if (strlen($text) > $limit) {
+            $text = substr($text, 0, $limit) . '...';
+        }
+        return $text;
     }
 }
