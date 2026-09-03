@@ -114,6 +114,41 @@ class ShipmentLeadTest extends TestCase
         ]);
     }
 
+    public function test_non_shipment_spam_emails_are_skipped(): void
+    {
+        $account = EmailAccount::create([
+            'name' => 'Sales Team',
+            'email' => 'sales@company.com',
+            'imap_host' => 'imap.company.com',
+            'imap_port' => 993,
+            'imap_username' => 'sales@company.com',
+            'imap_password' => 'secret123',
+            'inbox_folder' => 'INBOX',
+            'sent_folder' => 'Sent',
+            'status' => 'active',
+        ]);
+
+        $spamEmail = Email::create([
+            'email_account_id' => $account->id,
+            'message_id' => '<spam-001@nasar.com>',
+            'direction' => 'incoming',
+            'from_name' => 'Nasar',
+            'from_email' => 'nasar@thenexteck.com',
+            'to_email' => 'sales@company.com',
+            'subject' => 'Faltu email',
+            'body_text' => 'Faltu email Faltu email Faltu email',
+            'received_at' => now(),
+        ]);
+
+        $leadService = app(LeadService::class);
+        $lead = $leadService->createLeadFromEmail($spamEmail);
+
+        $this->assertNull($lead);
+        $this->assertDatabaseMissing('shipment_leads', [
+            'email_id' => $spamEmail->id,
+        ]);
+    }
+
     public function test_reply_detection_service_detects_outgoing_reply(): void
     {
         $account = EmailAccount::create([
