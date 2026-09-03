@@ -20,6 +20,7 @@ class Lead extends Model
         'customer_phone',
         'company_name',
         'email_subject',
+        'ai_summary',
         'original_content',
         'received_date',
         'shipment_type',

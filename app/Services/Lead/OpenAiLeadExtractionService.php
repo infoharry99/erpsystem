@@ -44,6 +44,7 @@ Return ONLY valid JSON matching this schema:
   "is_shipment_lead": true or false,
   "confidence_score": float between 0.0 and 1.0,
   "reason": "Short explanation for classification",
+  "ai_summary": "Concise 2-3 sentence executive summary of what is being requested in this inquiry",
   "customer_name": "Sender name or null",
   "customer_phone": "Phone number or null",
   "company_name": "Company name or null",

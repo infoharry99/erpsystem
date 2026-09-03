@@ -11,7 +11,7 @@ class ShipmentExtractionService
     {
         $content = $subject . "\n" . $bodyText;
 
-        return [
+        $data = [
             'incoterms' => $this->extractIncoterms($content),
             'shipment_type' => $this->extractShipmentType($content),
             'origin' => $this->extractOrigin($content),
@@ -31,6 +31,10 @@ class ShipmentExtractionService
             'customer_phone' => $this->extractCustomerPhone($content),
             'company_name' => $this->extractCompanyName($content, $fromName, $fromEmail),
         ];
+
+        $data['ai_summary'] = $this->generateSummary($data, $subject);
+
+        return $data;
     }
 
     protected function extractIncoterms(string $content): ?string
@@ -246,5 +250,59 @@ class ShipmentExtractionService
             }
         }
         return null;
+    }
+
+    protected function generateSummary(array $data, string $subject): string
+    {
+        $parts = [];
+        $type = match ($data['shipment_type'] ?? '') {
+            'sea_fcl' => 'Sea FCL',
+            'sea_lcl' => 'Sea LCL',
+            'air_freight' => 'Air Freight',
+            'road_freight' => 'Road Freight',
+            'reefer' => 'Reefer Container',
+            default => 'Freight Inquiry',
+        };
+
+        $parts[] = "{$type} quotation request";
+
+        if (!empty($data['commodity'])) {
+            $parts[] = "for {$data['commodity']}";
+        }
+
+        $route = '';
+        if (!empty($data['origin']) || !empty($data['pol'])) {
+            $route .= 'from ' . ($data['origin'] ?: $data['pol']);
+        }
+        if (!empty($data['destination']) || !empty($data['pod'])) {
+            $route .= ($route ? ' ' : '') . 'to ' . ($data['destination'] ?: $data['pod']);
+        }
+
+        if ($route) {
+            $parts[] = $route;
+        }
+
+        if (!empty($data['incoterms'])) {
+            $parts[] = "on {$data['incoterms']} terms";
+        }
+
+        $summary = ucfirst(implode(' ', $parts)) . '.';
+
+        $details = [];
+        if (!empty($data['container_type'])) {
+            $details[] = "Equipment: " . $data['container_type'];
+        }
+        if (!empty($data['weight'])) {
+            $details[] = "Weight: " . $data['weight'];
+        }
+        if (!empty($data['pallets'])) {
+            $details[] = "Pallets: " . $data['pallets'];
+        }
+
+        if (!empty($details)) {
+            $summary .= ' ' . implode(', ', $details) . '.';
+        }
+
+        return $summary;
     }
 }

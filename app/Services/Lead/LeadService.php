@@ -80,6 +80,7 @@ class LeadService
             'customer_phone' => $extracted['customer_phone'] ?? null,
             'company_name' => $extracted['company_name'] ?? null,
             'email_subject' => $email->subject ?? 'No Subject',
+            'ai_summary' => $extracted['ai_summary'] ?? null,
             'original_content' => $sanitizedContent,
             'received_date' => $email->received_at ?? $email->created_at,
             'shipment_type' => $extracted['shipment_type'] ?? 'unknown',

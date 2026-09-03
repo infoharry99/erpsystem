@@ -88,7 +88,12 @@
                                 <strong>{{ $lead->customer_name }}</strong><br>
                                 <small class="text-muted">{{ $lead->customer_email }}</small>
                             </td>
-                            <td><span class="d-inline-block text-truncate" style="max-width: 200px;">{{ $lead->email_subject }}</span></td>
+                            <td>
+                                <strong class="d-inline-block text-truncate" style="max-width: 250px;">{{ $lead->email_subject }}</strong>
+                                @if($lead->ai_summary)
+                                    <br><small class="text-secondary d-inline-block text-truncate" style="max-width: 280px;" title="{{ $lead->ai_summary }}"><i class="fa-solid fa-wand-magic-sparkles text-primary me-1"></i> {{ $lead->ai_summary }}</small>
+                                @endif
+                            </td>
                             <td>
                                 <span class="badge bg-light text-dark border">{{ $lead->origin ?: 'TBD' }}</span>
                                 <i class="fa-solid fa-arrow-right-long text-muted mx-1"></i>
