@@ -60,5 +60,11 @@ Route::middleware('auth')->group(function (): void {
         // Profile & Change Password
         Route::get('/profile/change-password', [AuthController::class, 'showChangePassword'])->name('profile.change-password');
         Route::post('/profile/change-password', [AuthController::class, 'updatePassword']);
+
+        // System Cache Clear Helper
+        Route::get('/clear-cache', function () {
+            \Illuminate\Support\Facades\Artisan::call('view:clear');
+            return redirect()->route('shipment-leads.leads.index')->with('success', 'View cache cleared successfully!');
+        })->name('clear-cache');
     });
 });
