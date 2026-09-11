@@ -61,10 +61,65 @@ Route::middleware('auth')->group(function (): void {
         Route::get('/profile/change-password', [AuthController::class, 'showChangePassword'])->name('profile.change-password');
         Route::post('/profile/change-password', [AuthController::class, 'updatePassword']);
 
-        // System Cache Clear Helper
+        // Cache clear helper inside admin group
         Route::get('/clear-cache', function () {
-            \Illuminate\Support\Facades\Artisan::call('view:clear');
-            return redirect()->route('shipment-leads.leads.index')->with('success', 'View cache cleared successfully!');
+            return redirect('/clear-cache');
         })->name('clear-cache');
     });
 });
+
+// Emergency Cache Clear & Diagnostic Route
+Route::get('/clear-cache', function () {
+    $results = [];
+
+    try {
+        \Illuminate\Support\Facades\Artisan::call('view:clear');
+        $results[] = 'Artisan view:clear: ' . trim(\Illuminate\Support\Facades\Artisan::output());
+    } catch (\Throwable $e) {
+        $results[] = 'Artisan view:clear error: ' . $e->getMessage();
+    }
+
+    try {
+        \Illuminate\Support\Facades\Artisan::call('cache:clear');
+        $results[] = 'Artisan cache:clear: ' . trim(\Illuminate\Support\Facades\Artisan::output());
+    } catch (\Throwable $e) {
+        $results[] = 'Artisan cache:clear error: ' . $e->getMessage();
+    }
+
+    // Force delete all cached blade templates
+    $viewPath = storage_path('framework/views');
+    $deletedFiles = 0;
+    if (is_dir($viewPath)) {
+        foreach (glob($viewPath . '/*.php') as $file) {
+            if (is_file($file)) {
+                @unlink($file);
+                $deletedFiles++;
+            }
+        }
+    }
+    $results[] = "Manually deleted {$deletedFiles} compiled view files from storage/framework/views.";
+
+    // Reset OPcache if active
+    if (function_exists('opcache_reset')) {
+        $op = @opcache_reset();
+        $results[] = 'OPcache reset: ' . ($op ? 'success' : 'failed/disabled');
+    }
+
+    // Check actual content of index.blade.php
+    $indexPath = resource_path('views/shipment_leads/leads/index.blade.php');
+    $indexContentSnippet = 'File not found';
+    if (file_exists($indexPath)) {
+        $lines = file($indexPath);
+        $headerLine = isset($lines[72]) ? trim($lines[72]) : 'Line 73 not found';
+        $indexContentSnippet = htmlspecialchars($headerLine);
+    }
+
+    return response('<html><body style="font-family:sans-serif;padding:30px;line-height:1.6;">'
+        . '<h2>Cache Cleared Successfully!</h2>'
+        . '<ul>' . implode('', array_map(fn($r) => "<li>{$r}</li>", $results)) . '</ul>'
+        . '<h3>Current File Header Check:</h3>'
+        . '<pre style="background:#f4f4f4;padding:12px;border:1px solid #ccc;">' . $indexContentSnippet . '</pre>'
+        . '<p><a href="/shipment-leads/leads" style="display:inline-block;padding:10px 20px;background:#0d6efd;color:#fff;text-decoration:none;border-radius:5px;">Go back to Shipment Leads</a></p>'
+        . '</body></html>');
+});
+

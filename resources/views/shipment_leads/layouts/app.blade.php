@@ -255,6 +255,10 @@
                 Last Sync: <strong id="lastSyncTime">{{ $lastSyncTime ?? 'Not synced yet' }}</strong>
             </span>
 
+            <a href="/clear-cache" class="btn btn-outline-secondary btn-sm" title="Clear System and View Cache">
+                <i class="fa-solid fa-broom me-1"></i> Clear Cache
+            </a>
+
             <button class="btn btn-primary btn-sm px-3" id="btnRefreshEmails" onclick="triggerEmailSync()">
                 <i class="fa-solid fa-rotate me-1" id="syncSpinner"></i> Refresh Emails
             </button>
