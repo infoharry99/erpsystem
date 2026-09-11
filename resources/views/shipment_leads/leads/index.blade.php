@@ -70,7 +70,7 @@
                         <th>Received Date</th>
                         <th>Customer</th>
                         <th>Subject</th>
-                        <th>Origin $\rightarrow$ Destination</th>
+                        <th>Origin &rarr; Destination</th>
                         <th>Shipment Type</th>
                         <th>Source Mailbox</th>
                         <th>Reply Status</th>

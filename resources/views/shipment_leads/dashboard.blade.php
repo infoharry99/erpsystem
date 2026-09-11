@@ -211,7 +211,7 @@
                         <th>Date</th>
                         <th>Customer</th>
                         <th>Subject</th>
-                        <th>Origin $\rightarrow$ Destination</th>
+                        <th>Origin &rarr; Destination</th>
                         <th>Reply Status</th>
                         <th>Lead Status</th>
                         <th>Action</th>
