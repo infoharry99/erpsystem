@@ -105,6 +105,14 @@ Route::get('/clear-cache', function () {
         $results[] = 'OPcache reset: ' . ($op ? 'success' : 'failed/disabled');
     }
 
+    // Deduplicate any existing leads with identical email subjects
+    try {
+        $dedupCount = app(\App\Services\Lead\LeadService::class)->deduplicateExistingLeads();
+        $results[] = "Deduplication: Merged and removed {$dedupCount} duplicate lead(s) with identical email subjects.";
+    } catch (\Throwable $e) {
+        $results[] = 'Deduplication notice: ' . $e->getMessage();
+    }
+
     // Check actual content of index.blade.php
     $indexPath = resource_path('views/shipment_leads/leads/index.blade.php');
     $indexContentSnippet = 'File not found';

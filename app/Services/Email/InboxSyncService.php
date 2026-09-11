@@ -122,7 +122,7 @@ class InboxSyncService
                     }
 
                     $lead = $this->leadService->createLeadFromEmail($emailRecord);
-                    if ($lead) {
+                    if ($lead && $lead->wasRecentlyCreated) {
                         $stats['leads_created']++;
                     }
                 } catch (\Exception $e) {

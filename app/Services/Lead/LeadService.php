@@ -27,6 +27,14 @@ class LeadService
         }
 
         $subject = $email->subject ?? '';
+
+        // Prevent duplicate leads if a lead with the same email subject already exists
+        $existingLeadBySubject = $this->findExistingLeadBySubject($subject, $email);
+        if ($existingLeadBySubject) {
+            Log::info("Lead with same email subject already exists (Lead ID #{$existingLeadBySubject->id}, Subject: '{$existingLeadBySubject->email_subject}'). Skipping duplicate lead creation for Email ID #{$email->id}.");
+            return $existingLeadBySubject;
+        }
+
         $bodyText = $email->body_text ?: strip_tags($email->body_html ?? '');
 
         $extracted = null;
@@ -158,5 +166,138 @@ class LeadService
         $clean = preg_replace('/javascript\s*:/i', '', $clean);
 
         return $clean;
+    }
+
+    /**
+     * Normalize email subjects by stripping Re:, Fwd:, FW: prefixes and tags.
+     */
+    public static function normalizeSubject(?string $subject): string
+    {
+        if (empty($subject)) {
+            return '';
+        }
+
+        $cleaned = trim($subject);
+
+        // Repeatedly remove Re:, Fwd:, FW:, Aw:, Sv:, Vs: and tags like [External], [EXT], [Spam]
+        $pattern = '/^(\s*(\[(external|ext|spam)\]|(re|fwd|fw|sv|vs|aw)\s*(\[\d+\])?\s*:)\s*)+/i';
+        while (preg_match($pattern, $cleaned)) {
+            $cleaned = preg_replace($pattern, '', $cleaned);
+        }
+
+        // Collapse multiple whitespace characters into a single space
+        $cleaned = preg_replace('/\s+/', ' ', $cleaned);
+
+        return strtolower(trim($cleaned));
+    }
+
+    /**
+     * Find an existing lead with the same email subject.
+     */
+    public function findExistingLeadBySubject(?string $subject, ?Email $email = null): ?Lead
+    {
+        if (empty($subject)) {
+            return null;
+        }
+
+        $rawTrimmed = trim($subject);
+        $normalized = self::normalizeSubject($rawTrimmed);
+
+        if (empty($normalized)) {
+            return null;
+        }
+
+        $genericSubjects = ['no subject', '(no subject)', 'none'];
+        if (in_array($normalized, $genericSubjects, true)) {
+            if ($email) {
+                // If generic subject, only match if same sender
+                return Lead::whereRaw('LOWER(customer_email) = ?', [strtolower(trim($email->from_email))])
+                    ->where(function ($q) use ($rawTrimmed) {
+                        $q->whereRaw('LOWER(TRIM(email_subject)) = ?', [strtolower($rawTrimmed)]);
+                    })->latest('received_date')->first();
+            }
+            return null;
+        }
+
+        // 1. Direct match on raw email_subject (case-insensitive)
+        $directMatch = Lead::whereRaw('LOWER(TRIM(email_subject)) = ?', [strtolower($rawTrimmed)])->first();
+        if ($directMatch) {
+            return $directMatch;
+        }
+
+        // 2. Scan leads by normalized subject
+        $leads = Lead::whereNotNull('email_subject')->get();
+        foreach ($leads as $lead) {
+            if (self::normalizeSubject($lead->email_subject) === $normalized) {
+                return $lead;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Deduplicate existing leads by email subject (merges notes/data and removes duplicates).
+     *
+     * @return int Number of duplicate leads removed
+     */
+    public function deduplicateExistingLeads(): int
+    {
+        $leads = Lead::with('leadNotes')->orderBy('id', 'asc')->get();
+        $seen = [];
+        $deletedCount = 0;
+
+        foreach ($leads as $lead) {
+            $normalized = self::normalizeSubject($lead->email_subject);
+            if (empty($normalized) || in_array($normalized, ['no subject', '(no subject)', 'none'], true)) {
+                continue;
+            }
+
+            if (isset($seen[$normalized])) {
+                $primaryLead = $seen[$normalized];
+
+                // Reassign any notes from duplicate lead to primary lead
+                foreach ($lead->leadNotes as $note) {
+                    $note->update(['lead_id' => $primaryLead->id]);
+                }
+
+                // Copy over any missing extracted fields from duplicate to primary
+                $fieldsToBackfill = [
+                    'origin', 'destination', 'shipment_type', 'pol', 'pod',
+                    'pickup_address', 'delivery_address', 'commodity', 'weight',
+                    'dimensions', 'quantity', 'pallets', 'container_type',
+                    'shipment_date', 'incoterms', 'ai_summary', 'customer_phone',
+                    'company_name'
+                ];
+                $updates = [];
+                foreach ($fieldsToBackfill as $field) {
+                    if (empty($primaryLead->$field) && !empty($lead->$field)) {
+                        $updates[$field] = $lead->$field;
+                        $primaryLead->$field = $lead->$field;
+                    }
+                }
+
+                // If duplicate was marked replied, reflect on primary lead
+                if ($lead->reply_status === 'replied' && $primaryLead->reply_status !== 'replied') {
+                    $updates['reply_status'] = 'replied';
+                    $updates['replied_at'] = $lead->replied_at;
+                    $updates['replied_by_email_account_id'] = $lead->replied_by_email_account_id;
+                    $updates['reply_message_id'] = $lead->reply_message_id;
+                }
+
+                if (!empty($updates)) {
+                    $primaryLead->update($updates);
+                }
+
+                // Delete the duplicate lead
+                $lead->delete();
+                $deletedCount++;
+                Log::info("Deduplicated Lead ID #{$lead->id} (Subject: '{$lead->email_subject}') into Primary Lead ID #{$primaryLead->id}");
+            } else {
+                $seen[$normalized] = $lead;
+            }
+        }
+
+        return $deletedCount;
     }
 }

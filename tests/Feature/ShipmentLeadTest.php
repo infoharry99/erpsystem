@@ -214,4 +214,56 @@ class ShipmentLeadTest extends TestCase
         $responseAccounts = $this->get(route('shipment-leads.accounts.index'));
         $responseAccounts->assertStatus(200);
     }
+
+    public function test_duplicate_email_subject_only_creates_one_lead(): void
+    {
+        $account = EmailAccount::create([
+            'name' => 'Support Desk',
+            'email' => 'support@company.com',
+            'imap_host' => 'imap.company.com',
+            'imap_port' => 993,
+            'imap_username' => 'support@company.com',
+            'imap_password' => 'secret123',
+            'status' => 'active',
+        ]);
+
+        $leadService = app(LeadService::class);
+
+        // First email with subject
+        $email1 = Email::create([
+            'email_account_id' => $account->id,
+            'message_id' => '<inquiry-001@customer.com>',
+            'direction' => 'incoming',
+            'from_name' => 'David Logistic',
+            'from_email' => 'david@logistic.com',
+            'to_email' => 'support@company.com',
+            'subject' => 'FW: Urgent Freight Quotation from London to Dubai',
+            'body_text' => 'Please quote air freight charges for 5 pallets 1200kg from London to Dubai airport.',
+            'received_at' => now()->subHours(2),
+        ]);
+
+        $lead1 = $leadService->createLeadFromEmail($email1);
+        $this->assertNotNull($lead1);
+        $this->assertEquals(1, Lead::where('email_subject', 'like', '%Urgent Freight Quotation%')->count());
+
+        // Second email with same subject (with Re: prefix)
+        $email2 = Email::create([
+            'email_account_id' => $account->id,
+            'message_id' => '<inquiry-002@customer.com>',
+            'direction' => 'incoming',
+            'from_name' => 'David Logistic',
+            'from_email' => 'david@logistic.com',
+            'to_email' => 'support@company.com',
+            'subject' => 'Re: FW: Urgent Freight Quotation from London to Dubai',
+            'body_text' => 'Following up on this quotation request.',
+            'received_at' => now(),
+        ]);
+
+        $lead2 = $leadService->createLeadFromEmail($email2);
+        $this->assertNotNull($lead2);
+        $this->assertEquals($lead1->id, $lead2->id);
+
+        // Ensure total leads for this subject is still ONLY 1
+        $this->assertEquals(1, Lead::where('email_subject', 'like', '%Urgent Freight Quotation%')->count());
+    }
 }

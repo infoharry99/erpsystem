@@ -80,11 +80,6 @@ class ReplyDetectionService
 
     public function normalizeSubject(?string $subject): string
     {
-        if (empty($subject)) {
-            return '';
-        }
-        $cleaned = preg_replace('/^(re|fwd|fw|sv|vs|aw)\s*:\s*/i', '', trim($subject));
-        $cleaned = preg_replace('/\s+/', ' ', $cleaned);
-        return strtolower($cleaned);
+        return \App\Services\Lead\LeadService::normalizeSubject($subject);
     }
 }
