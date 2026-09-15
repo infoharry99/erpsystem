@@ -111,6 +111,8 @@
     function testImapConnection() {
         const form = document.getElementById('accountForm');
         const formData = new FormData(form);
+        formData.delete('_method'); // Avoid method spoofing overriding POST to PUT on edit page
+
         const spinner = document.getElementById('testSpinner');
         const box = document.getElementById('testResultBox');
 
@@ -125,24 +127,30 @@
             },
             body: formData
         })
-        .then(res => res.json())
+        .then(async res => {
+            const data = await res.json().catch(() => null);
+            if (!res.ok) {
+                throw new Error((data && data.message) ? data.message : `HTTP ${res.status}: ${res.statusText}`);
+            }
+            return data;
+        })
         .then(data => {
             spinner.classList.remove('fa-spin');
             box.classList.remove('d-none', 'alert-success', 'alert-danger');
 
-            if (data.success) {
+            if (data && data.success) {
                 box.classList.add('alert-success');
                 box.innerHTML = `<i class="fa-solid fa-circle-check me-2"></i> ${data.message}`;
             } else {
                 box.classList.add('alert-danger');
-                box.innerHTML = `<i class="fa-solid fa-triangle-exclamation me-2"></i> ${data.message}`;
+                box.innerHTML = `<i class="fa-solid fa-triangle-exclamation me-2"></i> ${data ? data.message : 'Connection test failed.'}`;
             }
         })
         .catch(err => {
             spinner.classList.remove('fa-spin');
             box.classList.remove('d-none', 'alert-success');
             box.classList.add('alert-danger');
-            box.innerHTML = `<i class="fa-solid fa-triangle-exclamation me-2"></i> Connection test failed. Check server parameters.`;
+            box.innerHTML = `<i class="fa-solid fa-triangle-exclamation me-2"></i> ${err.message || 'Connection test failed. Check server parameters.'}`;
         });
     }
 </script>

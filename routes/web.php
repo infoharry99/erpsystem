@@ -29,7 +29,7 @@ Route::middleware('auth')->group(function (): void {
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
 
         // Multiple Email Accounts Management
-        Route::post('/accounts/test-connection', [EmailAccountController::class, 'testConnection'])->name('accounts.test-connection');
+        Route::match(['post', 'put'], '/accounts/test-connection', [EmailAccountController::class, 'testConnection'])->name('accounts.test-connection');
         Route::get('/accounts', [EmailAccountController::class, 'index'])->name('accounts.index');
         Route::get('/accounts/create', [EmailAccountController::class, 'create'])->name('accounts.create');
         Route::post('/accounts', [EmailAccountController::class, 'store'])->name('accounts.store');
