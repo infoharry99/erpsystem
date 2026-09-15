@@ -135,9 +135,7 @@
                 </button>
             </form>
 
-            <div class="mt-4 pt-3 border-top text-center text-muted small">
-                Default Credentials: <strong>admin@company.com</strong> / <strong>password</strong>
-            </div>
+
         </div>
     </div>
 
