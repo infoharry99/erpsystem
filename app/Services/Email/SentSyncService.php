@@ -49,13 +49,28 @@ class SentSyncService
                 return $stats;
             }
 
+            // Query latest 40 sent emails descending to maintain low memory usage
             try {
-                $messages = $folder->query()->since(now()->subDays(30))->get();
+                $messages = $folder->query()
+                    ->since(now()->subDays(14))
+                    ->setFetchOrderDesc()
+                    ->limit(40)
+                    ->get();
+
                 if ($messages->count() === 0) {
-                    $messages = $folder->query()->all()->limit(100)->get();
+                    $messages = $folder->query()
+                        ->all()
+                        ->setFetchOrderDesc()
+                        ->limit(40)
+                        ->get();
                 }
-            } catch (\Exception $e) {
-                $messages = $folder->query()->all()->limit(100)->get();
+            } catch (\Throwable $e) {
+                Log::warning("Sent query fallback for {$account->email}: " . $e->getMessage());
+                $messages = $folder->query()
+                    ->all()
+                    ->setFetchOrderDesc()
+                    ->limit(40)
+                    ->get();
             }
 
             $stats['checked'] = count($messages);
@@ -117,13 +132,20 @@ class SentSyncService
                     if ($this->replyDetectionService->processOutgoingReply($outgoingRecord)) {
                         $stats['replies_detected']++;
                     }
-                } catch (\Exception $e) {
+                } catch (\Throwable $e) {
                     Log::warning("Skipped message during sent folder sync: " . $e->getMessage());
+                } finally {
+                    unset($msg);
                 }
             }
 
+            unset($messages);
+            if (function_exists('gc_collect_cycles')) {
+                gc_collect_cycles();
+            }
+
             $client->disconnect();
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::error("Sent folder sync failed for account {$account->email}: " . $e->getMessage());
         }
 

@@ -92,7 +92,7 @@ class EmailSyncController extends Controller
                         'skipped_duplicates' => $skipped,
                         'status' => 'success',
                     ]);
-                } catch (\Exception $e) {
+                } catch (\Throwable $e) {
                     $errorMessage = $e->getMessage();
                     $account->update(['last_error' => $errorMessage]);
 

@@ -43,14 +43,28 @@ class InboxSyncService
                 throw new \Exception("Inbox folder '{$inboxName}' not found for account {$account->email}");
             }
 
-            // Query recent emails or limit to latest 150 to prevent memory exhaustion
+            // Query latest 40 emails descending to prevent memory exhaustion on large mailboxes
             try {
-                $messages = $folder->query()->since(now()->subDays(30))->get();
+                $messages = $folder->query()
+                    ->since(now()->subDays(14))
+                    ->setFetchOrderDesc()
+                    ->limit(40)
+                    ->get();
+
                 if ($messages->count() === 0) {
-                    $messages = $folder->query()->all()->limit(100)->get();
+                    $messages = $folder->query()
+                        ->all()
+                        ->setFetchOrderDesc()
+                        ->limit(40)
+                        ->get();
                 }
-            } catch (\Exception $e) {
-                $messages = $folder->query()->all()->limit(100)->get();
+            } catch (\Throwable $e) {
+                Log::warning("Since query fallback for {$account->email}: " . $e->getMessage());
+                $messages = $folder->query()
+                    ->all()
+                    ->setFetchOrderDesc()
+                    ->limit(40)
+                    ->get();
             }
 
             $stats['checked'] = count($messages);
@@ -125,14 +139,21 @@ class InboxSyncService
                     if ($lead && $lead->wasRecentlyCreated) {
                         $stats['leads_created']++;
                     }
-                } catch (\Exception $e) {
+                } catch (\Throwable $e) {
                     Log::warning("Skipped message during inbox sync: " . $e->getMessage());
+                } finally {
+                    unset($msg);
                 }
+            }
+
+            unset($messages);
+            if (function_exists('gc_collect_cycles')) {
+                gc_collect_cycles();
             }
 
             $client->disconnect();
             $account->update(['last_error' => null]);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::error("Inbox sync failed for account {$account->email}: " . $e->getMessage());
             $account->update(['last_error' => $e->getMessage()]);
         }
