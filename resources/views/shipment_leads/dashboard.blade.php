@@ -204,16 +204,16 @@
         </a>
     </div>
     <div class="card-body p-0">
-        <div class="table-responsive" style="overflow-x: hidden;">
+        <div class="table-responsive">
             <table class="table-leads m-0">
                 <thead>
                     <tr>
-                        <th style="width: 12%;"># / Date</th>
-                        <th style="width: 22%;">Customer</th>
-                        <th style="width: 28%;">Subject</th>
+                        <th style="width: 11%;"># / Date</th>
+                        <th style="width: 21%;">Customer</th>
+                        <th style="width: 27%;">Subject</th>
                         <th style="width: 18%;">Route</th>
-                        <th style="width: 12%;">Status</th>
-                        <th style="width: 8%; text-align: center;">Action</th>
+                        <th style="width: 13%;">Status</th>
+                        <th style="width: 10%; text-align: center;">Action</th>
                     </tr>
                 </thead>
                 <tbody>

@@ -146,6 +146,14 @@
         .table-leads tbody tr.lead-unreplied td:first-child {
             border-left: 3.5px solid #f59e0b;
         }
+        .table-leads thead th:first-child,
+        .table-leads tbody td:first-child {
+            padding-left: 0.85rem;
+        }
+        .table-leads thead th:last-child,
+        .table-leads tbody td:last-child {
+            padding-right: 0.85rem;
+        }
 
         /* Avatar Circle for Initials */
         .avatar-initial {
@@ -214,7 +222,7 @@
             text-transform: capitalize;
         }
         .btn-action-open {
-            padding: 0.25rem 0.6rem;
+            padding: 0.22rem 0.55rem;
             font-size: 0.75rem;
             font-weight: 600;
             border-radius: 6px;
@@ -225,7 +233,9 @@
             text-decoration: none;
             display: inline-flex;
             align-items: center;
+            justify-content: center;
             gap: 4px;
+            white-space: nowrap;
         }
         .btn-action-open:hover {
             background-color: #0284c7;

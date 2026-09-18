@@ -83,18 +83,18 @@
         </div>
     </div>
     <div class="card-body p-0">
-        <div class="table-responsive" style="overflow-x: hidden;">
+        <div class="table-responsive">
             <table class="table-leads m-0">
                 <thead>
                     <tr>
-                        <th style="width: 9%;"># / Date</th>
-                        <th style="width: 19%;">Customer</th>
-                        <th style="width: 25%;">Subject & Summary</th>
-                        <th style="width: 16%;">Route (Origin &rarr; Dest)</th>
-                        <th style="width: 9%;">Type</th>
-                        <th style="width: 10%;">Mailbox</th>
-                        <th style="width: 12%;">Status</th>
-                        <th style="width: 6%; text-align: center;">Actions</th>
+                        <th style="width: 8%;"># / Date</th>
+                        <th style="width: 17%;">Customer</th>
+                        <th style="width: 23%;">Subject & Summary</th>
+                        <th style="width: 15%;">Route (Origin &rarr; Dest)</th>
+                        <th style="width: 8%;">Type</th>
+                        <th style="width: 11%;">Mailbox</th>
+                        <th style="width: 9%;">Status</th>
+                        <th style="width: 9%; text-align: center;">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
