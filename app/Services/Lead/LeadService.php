@@ -108,6 +108,7 @@ class LeadService
             'incoterms' => $extracted['incoterms'] ?? null,
             'lead_status' => 'new',
             'reply_status' => 'not_replied',
+            'is_read' => (bool) ($email->is_read ?? false),
         ]);
 
         Log::info("Created Genuine Shipment Lead ID #{$lead->id} from Email ID #{$email->id}");

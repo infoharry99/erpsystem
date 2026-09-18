@@ -15,6 +15,12 @@ class ImapConnectionService
             'options' => [
                 'debug' => false,
                 'version' => '1.0.0',
+                'fetch' => \Webklex\PHPIMAP\IMAP::FT_PEEK,
+                'sequence' => \Webklex\PHPIMAP\IMAP::ST_UID,
+                'fetch_body' => true,
+                'fetch_flags' => true,
+                'soft_fail' => true,
+                'rfc822' => true,
             ],
             'accounts' => [
                 'default' => [
@@ -25,6 +31,9 @@ class ImapConnectionService
                     'username'      => $account->imap_username,
                     'password'      => $account->decrypted_password,
                     'protocol'      => 'imap',
+                    'options'       => [
+                        'fetch' => \Webklex\PHPIMAP\IMAP::FT_PEEK,
+                    ],
                 ]
             ]
         ]);
@@ -57,7 +66,8 @@ class ImapConnectionService
             if (function_exists('imap_open')) {
                 $flags = '/' . ($account->imap_encryption ?: 'ssl') . '/novalidate-cert';
                 $mailboxStr = '{' . $account->imap_host . ':' . $account->imap_port . '/imap' . $flags . '}INBOX';
-                $imap = @imap_open($mailboxStr, $account->imap_username, $account->decrypted_password);
+                $readonlyFlag = defined('OP_READONLY') ? OP_READONLY : 0;
+                $imap = @imap_open($mailboxStr, $account->imap_username, $account->decrypted_password, $readonlyFlag);
 
                 if ($imap) {
                     @imap_close($imap);

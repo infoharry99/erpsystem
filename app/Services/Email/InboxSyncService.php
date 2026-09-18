@@ -43,9 +43,10 @@ class InboxSyncService
                 throw new \Exception("Inbox folder '{$inboxName}' not found for account {$account->email}");
             }
 
-            // Query latest 40 emails descending to prevent memory exhaustion on large mailboxes
+            // Query latest 40 emails descending using leaveUnread() to never alter Gmail read/unread flags
             try {
                 $messages = $folder->query()
+                    ->leaveUnread()
                     ->since(now()->subDays(14))
                     ->setFetchOrderDesc()
                     ->limit(40)
@@ -53,6 +54,7 @@ class InboxSyncService
 
                 if ($messages->count() === 0) {
                     $messages = $folder->query()
+                        ->leaveUnread()
                         ->all()
                         ->setFetchOrderDesc()
                         ->limit(40)
@@ -61,6 +63,7 @@ class InboxSyncService
             } catch (\Throwable $e) {
                 Log::warning("Since query fallback for {$account->email}: " . $e->getMessage());
                 $messages = $folder->query()
+                    ->leaveUnread()
                     ->all()
                     ->setFetchOrderDesc()
                     ->limit(40)
@@ -74,7 +77,15 @@ class InboxSyncService
                     $messageId = $msg->getMessageId();
                     $uid = $msg->getUid();
 
-                    $exists = Email::where('email_account_id', $account->id)
+                    // Read-only check of Gmail's current read/unread status
+                    $isReadInGmail = false;
+                    try {
+                        $isReadInGmail = (bool) $msg->hasFlag('seen');
+                    } catch (\Throwable $fe) {
+                        $isReadInGmail = false;
+                    }
+
+                    $existingEmail = Email::where('email_account_id', $account->id)
                         ->where(function ($query) use ($messageId, $uid) {
                             if ($messageId) {
                                 $query->where('message_id', $messageId);
@@ -83,9 +94,16 @@ class InboxSyncService
                                 $query->orWhere('imap_uid', $uid);
                             }
                         })
-                        ->exists();
+                        ->first();
 
-                    if ($exists) {
+                    if ($existingEmail) {
+                        // Reflect current Gmail read/unread status in our system
+                        if ($existingEmail->is_read !== $isReadInGmail) {
+                            $existingEmail->update(['is_read' => $isReadInGmail]);
+                            if ($existingEmail->lead && $existingEmail->lead->is_read !== $isReadInGmail) {
+                                $existingEmail->lead->update(['is_read' => $isReadInGmail]);
+                            }
+                        }
                         $stats['skipped']++;
                         continue;
                     }
@@ -120,6 +138,7 @@ class InboxSyncService
                         'references' => is_array($msg->getReferences()) ? implode(' ', $msg->getReferences()) : $msg->getReferences(),
                         'received_at' => $receivedDate,
                         'has_attachments' => $msg->hasAttachments(),
+                        'is_read' => $isReadInGmail,
                     ]);
 
                     $stats['imported']++;

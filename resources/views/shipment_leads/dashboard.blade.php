@@ -229,7 +229,12 @@
                         @endphp
                         <tr class="{{ $lead->reply_status === 'not_replied' ? 'lead-unreplied' : '' }}">
                             <td>
-                                <div class="fw-bold text-dark">#{{ $lead->id }}</div>
+                                <div class="d-flex align-items-center gap-1">
+                                    @if(!$lead->is_read)
+                                        <span class="unread-dot" title="Unread in Gmail"></span>
+                                    @endif
+                                    <span class="fw-bold {{ !$lead->is_read ? 'text-primary' : 'text-dark' }}">#{{ $lead->id }}</span>
+                                </div>
                                 <div class="text-muted" style="font-size: 0.7rem;">{{ $lead->received_date ? $lead->received_date->format('M d, H:i') : '-' }}</div>
                             </td>
                             <td>
@@ -245,7 +250,7 @@
                             </td>
                             <td>
                                 <div class="text-truncate">
-                                    <span class="fw-semibold text-dark text-truncate d-block" title="{{ $lead->email_subject }}">
+                                    <span class="{{ !$lead->is_read ? 'fw-bold text-dark' : 'fw-semibold text-secondary' }} text-truncate d-block" title="{{ $lead->email_subject }}">
                                         {{ $lead->email_subject ?: 'No Subject' }}
                                     </span>
                                 </div>
@@ -259,6 +264,16 @@
                             </td>
                             <td>
                                 <div class="d-flex flex-column gap-1 align-items-start">
+                                    @if($lead->is_read)
+                                        <span class="pill-status pill-read" title="Gmail: Read">
+                                            <i class="fa-regular fa-envelope-open me-1" style="font-size: 0.55rem;"></i>Read
+                                        </span>
+                                    @else
+                                        <span class="pill-status pill-unread" title="Gmail: Unread">
+                                            <span class="unread-dot me-1" style="width: 5px; height: 5px; min-width: 5px;"></span>Unread
+                                        </span>
+                                    @endif
+
                                     @if($lead->reply_status === 'replied')
                                         <span class="pill-status pill-replied">
                                             <i class="fa-solid fa-circle-check me-1" style="font-size: 0.55rem;"></i>Replied

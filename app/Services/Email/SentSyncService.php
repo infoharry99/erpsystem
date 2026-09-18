@@ -49,9 +49,10 @@ class SentSyncService
                 return $stats;
             }
 
-            // Query latest 40 sent emails descending to maintain low memory usage
+            // Query latest 40 sent emails descending using leaveUnread() to maintain read-only IMAP state
             try {
                 $messages = $folder->query()
+                    ->leaveUnread()
                     ->since(now()->subDays(14))
                     ->setFetchOrderDesc()
                     ->limit(40)
@@ -59,6 +60,7 @@ class SentSyncService
 
                 if ($messages->count() === 0) {
                     $messages = $folder->query()
+                        ->leaveUnread()
                         ->all()
                         ->setFetchOrderDesc()
                         ->limit(40)
@@ -67,6 +69,7 @@ class SentSyncService
             } catch (\Throwable $e) {
                 Log::warning("Sent query fallback for {$account->email}: " . $e->getMessage());
                 $messages = $folder->query()
+                    ->leaveUnread()
                     ->all()
                     ->setFetchOrderDesc()
                     ->limit(40)
@@ -125,6 +128,7 @@ class SentSyncService
                         'references' => is_array($msg->getReferences()) ? implode(' ', $msg->getReferences()) : $msg->getReferences(),
                         'sent_at' => $sentDate,
                         'has_attachments' => $msg->hasAttachments(),
+                        'is_read' => true,
                     ]);
 
                     $stats['imported']++;

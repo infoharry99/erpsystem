@@ -196,6 +196,25 @@
             color: #e11d48;
             border: 1px solid #fecdd3;
         }
+        .pill-unread {
+            background-color: #eff6ff;
+            color: #1d4ed8;
+            border: 1px solid #bfdbfe;
+            font-weight: 700;
+        }
+        .pill-read {
+            background-color: #f8fafc;
+            color: #64748b;
+            border: 1px solid #e2e8f0;
+        }
+        .unread-dot {
+            width: 7px;
+            height: 7px;
+            min-width: 7px;
+            border-radius: 50%;
+            background-color: #2563eb;
+            display: inline-block;
+        }
         .pill-type {
             background-color: #f0f9ff;
             color: #0284c7;

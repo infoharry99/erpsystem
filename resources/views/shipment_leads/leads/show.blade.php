@@ -10,7 +10,14 @@
     </a>
 
     <div class="d-flex align-items-center gap-2">
-        <span class="fs-6">Reply Status:</span>
+        <span class="fs-6 text-muted">Gmail:</span>
+        @if($lead->is_read)
+            <span class="badge bg-light text-secondary border fs-6 px-3 py-2"><i class="fa-regular fa-envelope-open me-1"></i> Read</span>
+        @else
+            <span class="badge bg-primary fs-6 px-3 py-2"><i class="fa-solid fa-envelope me-1"></i> Unread</span>
+        @endif
+
+        <span class="fs-6 text-muted ms-2">Reply:</span>
         @if($lead->reply_status === 'replied')
             <span class="badge badge-replied fs-6 px-3 py-2"><i class="fa-solid fa-circle-check me-1"></i> Replied</span>
         @else

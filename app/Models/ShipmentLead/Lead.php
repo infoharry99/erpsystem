@@ -44,12 +44,14 @@ class Lead extends Model
         'replied_by_email_account_id',
         'reply_message_id',
         'assigned_to',
+        'is_read',
         'notes',
     ];
 
     protected $casts = [
         'received_date' => 'datetime',
         'replied_at' => 'datetime',
+        'is_read' => 'boolean',
     ];
 
     public function email()

@@ -37,6 +37,14 @@ class LeadController extends Controller
             $query->where('reply_status', $request->reply_status);
         }
 
+        if ($request->filled('is_read')) {
+            if ($request->is_read === 'read' || $request->is_read === '1') {
+                $query->where('is_read', true);
+            } elseif ($request->is_read === 'unread' || $request->is_read === '0') {
+                $query->where('is_read', false);
+            }
+        }
+
         if ($request->filled('lead_status')) {
             $query->where('lead_status', $request->lead_status);
         }

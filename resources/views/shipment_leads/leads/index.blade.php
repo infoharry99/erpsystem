@@ -16,12 +16,19 @@
                     <input type="text" name="search" class="form-control border-start-0 ps-0" style="border-radius: 0 8px 8px 0; font-size: 0.8125rem;" placeholder="Search customer, subject, ID..." value="{{ request('search') }}">
                 </div>
             </div>
-            <div class="col-lg-2 col-md-3">
+            <div class="col-lg-2 col-md-2">
                 <select name="email_account_id" class="form-select form-select-sm" style="border-radius: 8px; font-size: 0.8125rem;">
                     <option value="">All Mailboxes</option>
                     @foreach($accounts as $acc)
                         <option value="{{ $acc->id }}" {{ request('email_account_id') == $acc->id ? 'selected' : '' }}>{{ $acc->email }}</option>
                     @endforeach
+                </select>
+            </div>
+            <div class="col-lg-2 col-md-2">
+                <select name="is_read" class="form-select form-select-sm" style="border-radius: 8px; font-size: 0.8125rem;">
+                    <option value="">Gmail Status</option>
+                    <option value="unread" {{ request('is_read') === 'unread' ? 'selected' : '' }}>✉️ Unread in Gmail</option>
+                    <option value="read" {{ request('is_read') === 'read' ? 'selected' : '' }}>📖 Read in Gmail</option>
                 </select>
             </div>
             <div class="col-lg-2 col-md-2">
@@ -31,7 +38,7 @@
                     <option value="replied" {{ request('reply_status') === 'replied' ? 'selected' : '' }}>Replied</option>
                 </select>
             </div>
-            <div class="col-lg-2 col-md-3">
+            <div class="col-lg-2 col-md-2">
                 <select name="lead_status" class="form-select form-select-sm" style="border-radius: 8px; font-size: 0.8125rem;">
                     <option value="">Lead Status</option>
                     @foreach(['new', 'not_replied', 'replied', 'follow_up', 'quotation_sent', 'negotiation', 'booked', 'won', 'lost', 'spam', 'closed'] as $st)
@@ -39,21 +46,11 @@
                     @endforeach
                 </select>
             </div>
-            <div class="col-lg-2 col-md-3">
-                <select name="shipment_type" class="form-select form-select-sm" style="border-radius: 8px; font-size: 0.8125rem;">
-                    <option value="">Shipment Type</option>
-                    <option value="sea_fcl" {{ request('shipment_type') === 'sea_fcl' ? 'selected' : '' }}>Sea FCL</option>
-                    <option value="sea_lcl" {{ request('shipment_type') === 'sea_lcl' ? 'selected' : '' }}>Sea LCL</option>
-                    <option value="air_freight" {{ request('shipment_type') === 'air_freight' ? 'selected' : '' }}>Air Freight</option>
-                    <option value="road_freight" {{ request('shipment_type') === 'road_freight' ? 'selected' : '' }}>Road Freight</option>
-                    <option value="reefer" {{ request('shipment_type') === 'reefer' ? 'selected' : '' }}>Reefer</option>
-                </select>
-            </div>
             <div class="col-lg-1 col-md-2 d-flex gap-1">
                 <button type="submit" class="btn btn-primary btn-sm px-2 flex-grow-1" style="border-radius: 8px;" title="Filter">
                     <i class="fa-solid fa-filter me-1" style="font-size: 0.75rem;"></i> Filter
                 </button>
-                @if(request()->hasAny(['search', 'email_account_id', 'reply_status', 'lead_status', 'shipment_type', 'sort']))
+                @if(request()->hasAny(['search', 'email_account_id', 'is_read', 'reply_status', 'lead_status', 'shipment_type', 'sort']))
                     <a href="{{ route('shipment-leads.leads.index') }}" class="btn btn-outline-secondary btn-sm px-2" style="border-radius: 8px;" title="Reset Filters">
                         <i class="fa-solid fa-rotate-left" style="font-size: 0.75rem;"></i>
                     </a>
@@ -111,7 +108,12 @@
                         <tr class="{{ $lead->reply_status === 'not_replied' ? 'lead-unreplied' : '' }}">
                             <!-- # & Date -->
                             <td>
-                                <div class="fw-bold text-dark">#{{ $lead->id }}</div>
+                                <div class="d-flex align-items-center gap-1">
+                                    @if(!$lead->is_read)
+                                        <span class="unread-dot" title="Unread in Gmail"></span>
+                                    @endif
+                                    <span class="fw-bold {{ !$lead->is_read ? 'text-primary' : 'text-dark' }}">#{{ $lead->id }}</span>
+                                </div>
                                 <div class="text-muted" style="font-size: 0.7rem; white-space: nowrap;">
                                     {{ $lead->received_date ? $lead->received_date->format('M d, H:i') : '-' }}
                                 </div>
@@ -137,7 +139,7 @@
                             <!-- Subject & Summary -->
                             <td>
                                 <div class="text-truncate">
-                                    <span class="fw-semibold text-dark text-truncate d-block" title="{{ $lead->email_subject }}">
+                                    <span class="{{ !$lead->is_read ? 'fw-bold text-dark' : 'fw-semibold text-secondary' }} text-truncate d-block" title="{{ $lead->email_subject }}">
                                         {{ $lead->email_subject ?: 'No Subject' }}
                                     </span>
                                     @if($lead->ai_summary)
@@ -169,9 +171,19 @@
                                 </div>
                             </td>
 
-                            <!-- Reply & Lead Status -->
+                            <!-- Reply, Read & Lead Status -->
                             <td>
                                 <div class="d-flex flex-column gap-1 align-items-start">
+                                    @if($lead->is_read)
+                                        <span class="pill-status pill-read" title="Gmail: Read">
+                                            <i class="fa-regular fa-envelope-open me-1" style="font-size: 0.55rem;"></i>Read
+                                        </span>
+                                    @else
+                                        <span class="pill-status pill-unread" title="Gmail: Unread">
+                                            <span class="unread-dot me-1" style="width: 5px; height: 5px; min-width: 5px;"></span>Unread
+                                        </span>
+                                    @endif
+
                                     @if($lead->reply_status === 'replied')
                                         <span class="pill-status pill-replied">
                                             <i class="fa-solid fa-circle-check me-1" style="font-size: 0.55rem;"></i>Replied
@@ -181,6 +193,7 @@
                                             <i class="fa-solid fa-circle-exclamation me-1" style="font-size: 0.55rem;"></i>Not Replied
                                         </span>
                                     @endif
+
                                     <span class="pill-status pill-lead-status">
                                         {{ str_replace('_', ' ', $lead->lead_status) }}
                                     </span>

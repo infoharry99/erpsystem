@@ -30,12 +30,14 @@ class Email extends Model
         'received_at',
         'sent_at',
         'has_attachments',
+        'is_read',
     ];
 
     protected $casts = [
         'received_at' => 'datetime',
         'sent_at' => 'datetime',
         'has_attachments' => 'boolean',
+        'is_read' => 'boolean',
     ];
 
     public function account()

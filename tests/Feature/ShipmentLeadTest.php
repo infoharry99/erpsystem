@@ -266,4 +266,127 @@ class ShipmentLeadTest extends TestCase
         // Ensure total leads for this subject is still ONLY 1
         $this->assertEquals(1, Lead::where('email_subject', 'like', '%Urgent Freight Quotation%')->count());
     }
+
+    public function test_incoming_email_preserves_gmail_read_and_unread_status(): void
+    {
+        $account = EmailAccount::create([
+            'name' => 'Import Team',
+            'email' => 'import@company.com',
+            'imap_host' => 'imap.company.com',
+            'imap_port' => 993,
+            'imap_username' => 'import@company.com',
+            'imap_password' => 'secret123',
+            'inbox_folder' => 'INBOX',
+            'status' => 'active',
+        ]);
+
+        $leadService = app(LeadService::class);
+
+        // 1. Unread email in Gmail (is_read = false)
+        $unreadEmail = Email::create([
+            'email_account_id' => $account->id,
+            'message_id' => '<unread-001@client.com>',
+            'direction' => 'incoming',
+            'from_name' => 'Alice Logistics',
+            'from_email' => 'alice@client.com',
+            'to_email' => 'import@company.com',
+            'subject' => 'Inquiry for Sea FCL 2x40HC Shanghai to Rotterdam',
+            'body_text' => 'Need ocean rates for 2x40HC containers ready next Monday.',
+            'received_at' => now(),
+            'is_read' => false,
+        ]);
+
+        $unreadLead = $leadService->createLeadFromEmail($unreadEmail);
+        $this->assertNotNull($unreadLead);
+        $this->assertFalse($unreadLead->is_read);
+
+        // 2. Read email in Gmail (is_read = true)
+        $readEmail = Email::create([
+            'email_account_id' => $account->id,
+            'message_id' => '<read-002@client.com>',
+            'direction' => 'incoming',
+            'from_name' => 'Bob Cargo',
+            'from_email' => 'bob@client.com',
+            'to_email' => 'import@company.com',
+            'subject' => 'Quote Request Air Freight Tokyo to New York 500kg',
+            'body_text' => 'Please provide air freight cost for 500kg from Tokyo to JFK.',
+            'received_at' => now(),
+            'is_read' => true,
+        ]);
+
+        $readLead = $leadService->createLeadFromEmail($readEmail);
+        $this->assertNotNull($readLead);
+        $this->assertTrue($readLead->is_read);
+    }
+
+    public function test_lead_filtering_by_gmail_read_and_unread_status(): void
+    {
+        $account = EmailAccount::create([
+            'name' => 'Operations',
+            'email' => 'ops@company.com',
+            'imap_host' => 'imap.company.com',
+            'imap_port' => 993,
+            'imap_username' => 'ops@company.com',
+            'imap_password' => 'secret123',
+            'inbox_folder' => 'INBOX',
+            'status' => 'active',
+        ]);
+
+        $leadService = app(LeadService::class);
+
+        $unreadEmail = Email::create([
+            'email_account_id' => $account->id,
+            'message_id' => '<unread-filter@client.com>',
+            'direction' => 'incoming',
+            'from_name' => 'Unread Client',
+            'from_email' => 'unread@client.com',
+            'to_email' => 'ops@company.com',
+            'subject' => 'Freight rate request Hamburg to Santos 1x20GP',
+            'body_text' => 'Need 1x20GP rate from Hamburg to Santos.',
+            'is_read' => false,
+        ]);
+        $leadService->createLeadFromEmail($unreadEmail);
+
+        $readEmail = Email::create([
+            'email_account_id' => $account->id,
+            'message_id' => '<read-filter@client.com>',
+            'direction' => 'incoming',
+            'from_name' => 'Read Client',
+            'from_email' => 'read@client.com',
+            'to_email' => 'ops@company.com',
+            'subject' => 'Freight rate request Antwerp to Singapore 2x40GP',
+            'body_text' => 'Need 2x40GP rate from Antwerp to Singapore.',
+            'is_read' => true,
+        ]);
+        $leadService->createLeadFromEmail($readEmail);
+
+        // Filter unread only
+        $responseUnread = $this->actingAs($this->user)->get(route('shipment-leads.leads.index', ['is_read' => 'unread']));
+        $responseUnread->assertOk();
+        $responseUnread->assertSee('Freight rate request Hamburg to Santos');
+        $responseUnread->assertDontSee('Freight rate request Antwerp to Singapore');
+
+        // Filter read only
+        $responseRead = $this->actingAs($this->user)->get(route('shipment-leads.leads.index', ['is_read' => 'read']));
+        $responseRead->assertOk();
+        $responseRead->assertSee('Freight rate request Antwerp to Singapore');
+        $responseRead->assertDontSee('Freight rate request Hamburg to Santos');
+    }
+
+    public function test_imap_connection_service_configures_ft_peek_fetch_option(): void
+    {
+        $account = new EmailAccount([
+            'imap_host' => 'imap.gmail.com',
+            'imap_port' => 993,
+            'imap_username' => 'test@gmail.com',
+            'imap_password' => 'secret',
+            'imap_encryption' => 'ssl',
+        ]);
+
+        $service = new \App\Services\Email\ImapConnectionService();
+        $client = $service->getClient($account);
+
+        $this->assertEquals(\Webklex\PHPIMAP\IMAP::FT_PEEK, $client->getConfig()->get('options.fetch'));
+    }
 }
+
