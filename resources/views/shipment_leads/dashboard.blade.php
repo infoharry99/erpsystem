@@ -1,303 +1,278 @@
 @extends('shipment_leads.layouts.app')
 
 @section('title', 'Shipment Sales Dashboard')
-@section('page_title', 'Shipment Sales Dashboard')
+@section('page_title', 'Dashboard')
 
 @section('content')
-<div class="row g-3 mb-4">
-    <div class="col-md-3">
-        <div class="card card-stat bg-primary text-white p-3">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h6 class="text-white-50 text-uppercase mb-1">Total Leads</h6>
-                    <h2 class="m-0 font-weight-bold">{{ number_format($totalLeads) }}</h2>
-                </div>
-                <i class="fa-solid fa-boxes-packing fa-2x text-white-50"></i>
-            </div>
-        </div>
+<!-- Dashboard Header Actions -->
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+    <div>
+        <h6 class="m-0 fw-bold text-dark" style="font-size: 0.95rem;">
+            Shipment Sales & Lead Analytics
+        </h6>
+        <p class="text-muted m-0" style="font-size: 0.78rem;">
+            Real-time overview of inquiry volume, response rates, and freight mode distribution.
+        </p>
     </div>
-
-    <div class="col-md-3">
-        <div class="card card-stat bg-danger text-white p-3">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h6 class="text-white-50 text-uppercase mb-1">Waiting For Reply</h6>
-                    <h2 class="m-0 font-weight-bold">{{ number_format($notRepliedCount) }}</h2>
-                </div>
-                <i class="fa-solid fa-clock fa-2x text-white-50"></i>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-md-3">
-        <div class="card card-stat bg-success text-white p-3">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h6 class="text-white-50 text-uppercase mb-1">Replied Leads</h6>
-                    <h2 class="m-0 font-weight-bold">{{ number_format($repliedCount) }}</h2>
-                </div>
-                <i class="fa-solid fa-reply-all fa-2x text-white-50"></i>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-md-3">
-        <div class="card card-stat bg-warning text-dark p-3">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h6 class="text-dark-50 text-uppercase mb-1">Quotations Sent</h6>
-                    <h2 class="m-0 font-weight-bold">{{ number_format($quotationsSent) }}</h2>
-                </div>
-                <i class="fa-solid fa-file-invoice-dollar fa-2x text-dark-50"></i>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="row g-3 mb-4">
-    <div class="col-md-3">
-        <div class="card border-0 shadow-sm p-3">
-            <div class="d-flex align-items-center justify-content-between">
-                <div>
-                    <small class="text-muted text-uppercase">New Today</small>
-                    <h4 class="m-0 text-dark font-weight-bold">{{ number_format($newToday) }}</h4>
-                </div>
-                <span class="badge bg-info p-2"><i class="fa-solid fa-calendar-day"></i></span>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card border-0 shadow-sm p-3">
-            <div class="d-flex align-items-center justify-content-between">
-                <div>
-                    <small class="text-muted text-uppercase">Booked Shipments</small>
-                    <h4 class="m-0 text-dark font-weight-bold">{{ number_format($bookedCount) }}</h4>
-                </div>
-                <span class="badge bg-purple p-2 text-white" style="background:#8b5cf6"><i class="fa-solid fa-truck-fast"></i></span>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card border-0 shadow-sm p-3">
-            <div class="d-flex align-items-center justify-content-between">
-                <div>
-                    <small class="text-muted text-uppercase">Won Deals</small>
-                    <h4 class="m-0 text-success font-weight-bold">{{ number_format($wonCount) }}</h4>
-                </div>
-                <span class="badge bg-success p-2"><i class="fa-solid fa-trophy"></i></span>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card border-0 shadow-sm p-3">
-            <div class="d-flex align-items-center justify-content-between">
-                <div>
-                    <small class="text-muted text-uppercase">Lost Deals</small>
-                    <h4 class="m-0 text-secondary font-weight-bold">{{ number_format($lostCount) }}</h4>
-                </div>
-                <span class="badge bg-secondary p-2"><i class="fa-solid fa-circle-xmark"></i></span>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="card border-0 shadow-sm mb-4 border-start border-4 border-danger">
-    <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
-        <h5 class="m-0 font-weight-bold text-danger">
-            <i class="fa-solid fa-triangle-exclamation me-2"></i> Leads Waiting For Reply (Oldest First)
-        </h5>
-        <a href="{{ route('shipment-leads.leads.index', ['reply_status' => 'not_replied']) }}" class="btn btn-outline-danger btn-sm">
-            View All Unreplied <i class="fa-solid fa-arrow-right ms-1"></i>
+    <div class="d-flex align-items-center gap-2">
+        <a href="{{ route('shipment-leads.leads.index', ['reply_status' => 'not_replied']) }}" class="btn btn-outline-danger btn-sm px-3" style="border-radius: 8px; font-size: 0.8125rem; font-weight: 600;">
+            <i class="fa-solid fa-clock-rotate-left me-1"></i> Waiting For Reply ({{ number_format($notRepliedCount) }})
+        </a>
+        <a href="{{ route('shipment-leads.leads.index') }}" class="btn btn-primary btn-sm px-3" style="border-radius: 8px; font-size: 0.8125rem; font-weight: 600;">
+            <i class="fa-solid fa-table-list me-1"></i> Open All Leads
         </a>
     </div>
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle m-0">
-                <thead class="table-light">
-                    <tr>
-                        <th>Lead ID</th>
-                        <th>Waiting Duration</th>
-                        <th>Customer / Subject</th>
-                        <th>Route</th>
-                        <th>Shipment Type</th>
-                        <th>Source Mailbox</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($unrepliedLeads as $lead)
-                        <tr>
-                            <td><strong>#{{ $lead->id }}</strong></td>
-                            <td>
-                                <span class="badge bg-danger">
-                                    <i class="fa-regular fa-clock me-1"></i> {{ $lead->waiting_duration }}
-                                </span>
-                            </td>
-                            <td>
-                                <div><strong>{{ $lead->customer_name }}</strong> <small class="text-muted">({{ $lead->customer_email }})</small></div>
-                                <div class="text-truncate small text-secondary" style="max-width: 320px;">{{ $lead->email_subject }}</div>
-                            </td>
-                            <td>
-                                <span class="text-dark">{{ $lead->origin ?: 'TBD' }}</span>
-                                <i class="fa-solid fa-arrow-right-long text-muted mx-1"></i>
-                                <span class="text-dark">{{ $lead->destination ?: 'TBD' }}</span>
-                            </td>
-                            <td><span class="badge bg-secondary">{{ $lead->shipment_type_label }}</span></td>
-                            <td><small class="text-muted">{{ $lead->account->email ?? 'N/A' }}</small></td>
-                            <td>
-                                <a href="{{ route('shipment-leads.leads.show', $lead->id) }}" class="btn btn-sm btn-primary">
-                                    Open Lead
-                                </a>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="7" class="text-center py-4 text-muted">
-                                <i class="fa-solid fa-circle-check text-success fa-2x mb-2 d-block"></i>
-                                Great job! No unreplied leads waiting.
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
+</div>
+
+<!-- Row 1: Key Performance Metrics -->
+<div class="row g-3 mb-3">
+    <!-- Total Leads -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card card-modern shadow-sm h-100 p-3">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <span class="text-uppercase text-muted fw-bold" style="font-size: 0.7rem; letter-spacing: 0.5px;">
+                        Total Inquiries
+                    </span>
+                    <h3 class="fw-bold text-dark m-0 my-1" style="font-size: 1.75rem;">
+                        {{ number_format($totalLeads) }}
+                    </h3>
+                    <div class="text-muted" style="font-size: 0.75rem;">
+                        <span class="badge bg-light text-primary border me-1" style="font-size: 0.7rem; font-weight: 600;">
+                            +{{ number_format($newToday) }} today
+                        </span>
+                        <span>{{ number_format($thisWeek) }} this week</span>
+                    </div>
+                </div>
+                <div class="rounded-3 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; background: #e0f2fe; color: #0284c7;">
+                    <i class="fa-solid fa-boxes-stacked" style="font-size: 1.15rem;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Waiting For Reply -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card card-modern shadow-sm h-100 p-3" style="border-left: 3.5px solid #ef4444 !important;">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <span class="text-uppercase text-danger fw-bold" style="font-size: 0.7rem; letter-spacing: 0.5px;">
+                        Waiting For Reply
+                    </span>
+                    <h3 class="fw-bold text-danger m-0 my-1" style="font-size: 1.75rem;">
+                        {{ number_format($notRepliedCount) }}
+                    </h3>
+                    <div style="font-size: 0.75rem;">
+                        <a href="{{ route('shipment-leads.leads.index', ['reply_status' => 'not_replied']) }}" class="text-danger text-decoration-none fw-semibold">
+                            Requires sales response <i class="fa-solid fa-arrow-right ms-0.5" style="font-size: 0.65rem;"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="rounded-3 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; background: #fee2e2; color: #ef4444;">
+                    <i class="fa-solid fa-clock-rotate-left" style="font-size: 1.15rem;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Replied Leads -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card card-modern shadow-sm h-100 p-3" style="border-left: 3.5px solid #10b981 !important;">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <span class="text-uppercase text-success fw-bold" style="font-size: 0.7rem; letter-spacing: 0.5px;">
+                        Replied Inquiries
+                    </span>
+                    <h3 class="fw-bold text-success m-0 my-1" style="font-size: 1.75rem;">
+                        {{ number_format($repliedCount) }}
+                    </h3>
+                    <div class="text-muted" style="font-size: 0.75rem;">
+                        @if($totalLeads > 0)
+                            <span class="badge bg-light text-success border me-1" style="font-size: 0.7rem; font-weight: 600;">
+                                {{ round(($repliedCount / $totalLeads) * 100, 1) }}%
+                            </span>
+                            <span>response rate</span>
+                        @else
+                            <span>No inquiries yet</span>
+                        @endif
+                    </div>
+                </div>
+                <div class="rounded-3 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; background: #dcfce7; color: #10b981;">
+                    <i class="fa-solid fa-circle-check" style="font-size: 1.15rem;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quotations Sent -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card card-modern shadow-sm h-100 p-3" style="border-left: 3.5px solid #f59e0b !important;">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <span class="text-uppercase text-warning fw-bold" style="font-size: 0.7rem; letter-spacing: 0.5px;">
+                        Quotations Sent
+                    </span>
+                    <h3 class="fw-bold text-dark m-0 my-1" style="font-size: 1.75rem;">
+                        {{ number_format($quotationsSent) }}
+                    </h3>
+                    <div class="text-muted" style="font-size: 0.75rem;">
+                        <span>In pricing & quotation stage</span>
+                    </div>
+                </div>
+                <div class="rounded-3 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; background: #fef3c7; color: #d97706;">
+                    <i class="fa-solid fa-file-invoice-dollar" style="font-size: 1.15rem;"></i>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
-<div class="row g-3 mb-4">
-    <div class="col-md-8">
-        <div class="card border-0 shadow-sm p-3">
-            <h6 class="font-weight-bold text-dark mb-3"><i class="fa-solid fa-chart-line text-primary me-2"></i> Lead Volume Trend (Last 14 Days)</h6>
-            <canvas id="chartLeadsByDay" height="120"></canvas>
+<!-- Row 2: Secondary Pipeline Metrics -->
+<div class="row g-2 mb-3">
+    <div class="col-md-3 col-6">
+        <div class="card card-modern shadow-sm p-2 px-3">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="text-muted text-uppercase fw-semibold" style="font-size: 0.68rem;">Today's Intake</span>
+                    <h5 class="m-0 fw-bold text-dark" style="font-size: 1.1rem;">{{ number_format($newToday) }}</h5>
+                </div>
+                <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; background: #e0f2fe; color: #0284c7; font-size: 0.8rem;">
+                    <i class="fa-solid fa-calendar-day"></i>
+                </div>
+            </div>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="card border-0 shadow-sm p-3">
-            <h6 class="font-weight-bold text-dark mb-3"><i class="fa-solid fa-chart-pie text-warning me-2"></i> Lead Status Breakdown</h6>
-            <canvas id="chartLeadStatus" height="240"></canvas>
+    <div class="col-md-3 col-6">
+        <div class="card card-modern shadow-sm p-2 px-3">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="text-muted text-uppercase fw-semibold" style="font-size: 0.68rem;">Booked Shipments</span>
+                    <h5 class="m-0 fw-bold text-dark" style="font-size: 1.1rem;">{{ number_format($bookedCount) }}</h5>
+                </div>
+                <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; background: #f3e8ff; color: #8b5cf6; font-size: 0.8rem;">
+                    <i class="fa-solid fa-truck-fast"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="card card-modern shadow-sm p-2 px-3">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="text-muted text-uppercase fw-semibold" style="font-size: 0.68rem;">Won Deals</span>
+                    <h5 class="m-0 fw-bold text-success" style="font-size: 1.1rem;">{{ number_format($wonCount) }}</h5>
+                </div>
+                <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; background: #ecfdf5; color: #059669; font-size: 0.8rem;">
+                    <i class="fa-solid fa-trophy"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="card card-modern shadow-sm p-2 px-3">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="text-muted text-uppercase fw-semibold" style="font-size: 0.68rem;">Lost / Closed</span>
+                    <h5 class="m-0 fw-bold text-secondary" style="font-size: 1.1rem;">{{ number_format($lostCount) }}</h5>
+                </div>
+                <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; background: #f1f5f9; color: #64748b; font-size: 0.8rem;">
+                    <i class="fa-solid fa-circle-xmark"></i>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
-<div class="row g-3 mb-4">
-    <div class="col-md-6">
-        <div class="card border-0 shadow-sm p-3">
-            <h6 class="font-weight-bold text-dark mb-3"><i class="fa-solid fa-inbox text-info me-2"></i> Leads by Source Mailbox</h6>
-            <canvas id="chartMailboxes" height="140"></canvas>
+<!-- Row 3: Visual Analytics Charts -->
+<div class="row g-3 mb-3">
+    <!-- Trend Chart -->
+    <div class="col-lg-8">
+        <div class="card card-modern shadow-sm h-100">
+            <div class="card-header bg-white d-flex align-items-center justify-content-between py-2 px-3">
+                <div>
+                    <span class="fw-bold text-dark" style="font-size: 0.85rem;">
+                        <i class="fa-solid fa-chart-line text-primary me-1.5"></i> Lead Volume Trend (Last 14 Days)
+                    </span>
+                    <span class="text-muted d-block" style="font-size: 0.72rem;">Daily freight inquiries received across connected accounts</span>
+                </div>
+            </div>
+            <div class="card-body p-3">
+                <canvas id="chartLeadsByDay" height="110"></canvas>
+            </div>
         </div>
     </div>
-    <div class="col-md-6">
-        <div class="card border-0 shadow-sm p-3">
-            <h6 class="font-weight-bold text-dark mb-3"><i class="fa-solid fa-plane-departure text-purple me-2"></i> Shipment Type Distribution</h6>
-            <canvas id="chartShipmentTypes" height="140"></canvas>
+
+    <!-- Status Breakdown -->
+    <div class="col-lg-4">
+        <div class="card card-modern shadow-sm h-100">
+            <div class="card-header bg-white d-flex align-items-center justify-content-between py-2 px-3">
+                <div>
+                    <span class="fw-bold text-dark" style="font-size: 0.85rem;">
+                        <i class="fa-solid fa-chart-pie text-warning me-1.5"></i> Status Breakdown
+                    </span>
+                    <span class="text-muted d-block" style="font-size: 0.72rem;">Lead distribution across pipeline stages</span>
+                </div>
+            </div>
+            <div class="card-body p-3 d-flex align-items-center justify-content-center">
+                <canvas id="chartLeadStatus" height="200"></canvas>
+            </div>
         </div>
     </div>
 </div>
 
-<div class="card border-0 shadow-sm">
-    <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
-        <h5 class="m-0 font-weight-bold text-dark">
-            <i class="fa-solid fa-clock-rotate-left me-2"></i> Recent Shipment Leads
-        </h5>
-        <a href="{{ route('shipment-leads.leads.index') }}" class="btn btn-sm btn-outline-primary">
-            View All Leads <i class="fa-solid fa-arrow-right ms-1"></i>
-        </a>
+<!-- Row 4: Mailbox & Shipment Type Breakdown -->
+<div class="row g-3 mb-3">
+    <!-- Mailbox Distribution -->
+    <div class="col-lg-6">
+        <div class="card card-modern shadow-sm h-100">
+            <div class="card-header bg-white d-flex align-items-center justify-content-between py-2 px-3">
+                <div>
+                    <span class="fw-bold text-dark" style="font-size: 0.85rem;">
+                        <i class="fa-solid fa-inbox text-info me-1.5"></i> Leads by Mailbox
+                    </span>
+                    <span class="text-muted d-block" style="font-size: 0.72rem;">Volume per monitored email account</span>
+                </div>
+            </div>
+            <div class="card-body p-3">
+                <canvas id="chartMailboxes" height="140"></canvas>
+            </div>
+        </div>
     </div>
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table-leads m-0">
-                <thead>
-                    <tr>
-                        <th style="width: 11%;"># / Date</th>
-                        <th style="width: 21%;">Customer</th>
-                        <th style="width: 27%;">Subject</th>
-                        <th style="width: 18%;">Route</th>
-                        <th style="width: 13%;">Status</th>
-                        <th style="width: 10%; text-align: center;">Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($recentLeads as $lead)
-                        @php
-                            $initials = '';
-                            $nameClean = trim($lead->customer_name ?? '');
-                            $nameParts = preg_split('/\s+/', $nameClean);
-                            if (!empty($nameParts[0])) $initials .= strtoupper(substr($nameParts[0], 0, 1));
-                            if (isset($nameParts[1]) && !empty($nameParts[1])) $initials .= strtoupper(substr($nameParts[1], 0, 1));
-                            if (empty($initials)) $initials = strtoupper(substr($lead->customer_email ?? 'CL', 0, 2));
-                            $avatarColorIndex = abs(crc32($lead->customer_email ?? $lead->customer_name ?? '')) % 6;
-                        @endphp
-                        <tr class="{{ $lead->reply_status === 'not_replied' ? 'lead-unreplied' : '' }}">
-                            <td>
-                                <div class="d-flex align-items-center gap-1">
-                                    @if(!$lead->is_read)
-                                        <span class="unread-dot" title="Unread in Gmail"></span>
-                                    @endif
-                                    <span class="fw-bold {{ !$lead->is_read ? 'text-primary' : 'text-dark' }}">#{{ $lead->id }}</span>
-                                </div>
-                                <div class="text-muted" style="font-size: 0.7rem;">{{ $lead->received_date ? $lead->received_date->format('M d, H:i') : '-' }}</div>
-                            </td>
-                            <td>
-                                <div class="d-flex align-items-center gap-2">
-                                    <div class="avatar-initial avatar-bg-{{ $avatarColorIndex }}" style="width: 28px; height: 28px; min-width: 28px; font-size: 0.7rem;">
-                                        {{ $initials }}
-                                    </div>
-                                    <div class="text-truncate" style="min-width: 0;">
-                                        <div class="fw-semibold text-dark text-truncate" title="{{ $lead->customer_name }}">{{ $lead->customer_name ?: 'Unknown' }}</div>
-                                        <div class="text-muted text-truncate" style="font-size: 0.7rem;">{{ $lead->customer_email }}</div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="text-truncate">
-                                    <span class="{{ !$lead->is_read ? 'fw-bold text-dark' : 'fw-semibold text-secondary' }} text-truncate d-block" title="{{ $lead->email_subject }}">
-                                        {{ $lead->email_subject ?: 'No Subject' }}
-                                    </span>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="pill-route" title="{{ ($lead->origin ?: 'TBD') . ' → ' . ($lead->destination ?: 'TBD') }}">
-                                    <span>{{ $lead->origin ?: 'TBD' }}</span>
-                                    <i class="fa-solid fa-arrow-right text-muted mx-1" style="font-size: 0.65rem;"></i>
-                                    <span>{{ $lead->destination ?: 'TBD' }}</span>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="d-flex flex-column gap-1 align-items-start">
-                                    @if($lead->is_read)
-                                        <span class="pill-status pill-read" title="Gmail: Read">
-                                            <i class="fa-regular fa-envelope-open me-1" style="font-size: 0.55rem;"></i>Read
-                                        </span>
-                                    @else
-                                        <span class="pill-status pill-unread" title="Gmail: Unread">
-                                            <span class="unread-dot me-1" style="width: 5px; height: 5px; min-width: 5px;"></span>Unread
-                                        </span>
-                                    @endif
 
-                                    @if($lead->reply_status === 'replied')
-                                        <span class="pill-status pill-replied">
-                                            <i class="fa-solid fa-circle-check me-1" style="font-size: 0.55rem;"></i>Replied
-                                        </span>
-                                    @else
-                                        <span class="pill-status pill-not-replied">
-                                            <i class="fa-solid fa-circle-exclamation me-1" style="font-size: 0.55rem;"></i>Not Replied
-                                        </span>
-                                    @endif
-                                </div>
-                            </td>
-                            <td class="text-center">
-                                <a href="{{ route('shipment-leads.leads.show', $lead->id) }}" class="btn-action-open" title="Open Lead">
-                                    <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 0.7rem;"></i> Open
-                                </a>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="6" class="text-center py-4 text-muted">No shipment leads received yet. Click "Refresh Emails" to sync mailboxes.</td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
+    <!-- Shipment Type Distribution -->
+    <div class="col-lg-6">
+        <div class="card card-modern shadow-sm h-100">
+            <div class="card-header bg-white d-flex align-items-center justify-content-between py-2 px-3">
+                <div>
+                    <span class="fw-bold text-dark" style="font-size: 0.85rem;">
+                        <i class="fa-solid fa-plane-departure text-purple me-1.5" style="color: #8b5cf6;"></i> Shipment Modes & Equipment
+                    </span>
+                    <span class="text-muted d-block" style="font-size: 0.72rem;">Air Freight, Sea FCL, Sea LCL, Reefer, Road</span>
+                </div>
+            </div>
+            <div class="card-body p-3 d-flex align-items-center justify-content-center">
+                <canvas id="chartShipmentTypes" height="140"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Navigation Banner -->
+<div class="card card-modern shadow-sm p-3 bg-white" style="border-radius: 12px;">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <div class="d-flex align-items-center gap-2">
+            <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 36px; height: 36px; background: #e0f2fe; color: #0284c7;">
+                <i class="fa-solid fa-list-check" style="font-size: 0.95rem;"></i>
+            </div>
+            <div>
+                <div class="fw-bold text-dark" style="font-size: 0.875rem;">Manage Shipment Leads</div>
+                <div class="text-muted" style="font-size: 0.75rem;">Search, filter by Gmail read/unread state, assign team reps, and track replies.</div>
+            </div>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <a href="{{ route('shipment-leads.leads.index') }}" class="btn btn-primary btn-sm px-3" style="border-radius: 8px; font-size: 0.8125rem; font-weight: 600;">
+                Go to Leads Workspace <i class="fa-solid fa-arrow-right ms-1"></i>
+            </a>
         </div>
     </div>
 </div>
@@ -305,6 +280,12 @@
 
 @push('scripts')
 <script>
+    // Global Font Settings for Chart.js
+    Chart.defaults.font.family = "'Plus Jakarta Sans', system-ui, -apple-system, sans-serif";
+    Chart.defaults.font.size = 11;
+    Chart.defaults.color = "#64748b";
+
+    // 1. Leads by Day Trend Chart
     new Chart(document.getElementById('chartLeadsByDay'), {
         type: 'line',
         data: {
@@ -312,50 +293,126 @@
             datasets: [{
                 label: 'Inquiries Received',
                 data: {!! json_encode($leadsByDayCounts) !!},
-                borderColor: '#3b82f6',
-                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                borderColor: '#0284c7',
+                backgroundColor: 'rgba(2, 132, 199, 0.08)',
+                borderWidth: 2,
+                pointBackgroundColor: '#0284c7',
+                pointRadius: 3,
+                pointHoverRadius: 5,
                 fill: true,
-                tension: 0.3
+                tension: 0.35
             }]
         },
-        options: { responsive: true, maintainAspectRatio: true }
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                x: {
+                    grid: { display: false }
+                },
+                y: {
+                    beginAtZero: true,
+                    ticks: { precision: 0 },
+                    grid: { color: '#f1f5f9' }
+                }
+            }
+        }
     });
 
+    // 2. Status Breakdown Doughnut Chart
     new Chart(document.getElementById('chartLeadStatus'), {
         type: 'doughnut',
         data: {
             labels: {!! json_encode(array_keys($statusCounts)) !!},
             datasets: [{
                 data: {!! json_encode(array_values($statusCounts)) !!},
-                backgroundColor: ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#06b6d4', '#ec4899', '#14b8a6', '#64748b']
+                backgroundColor: [
+                    '#0284c7', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6',
+                    '#06b6d4', '#ec4899', '#14b8a6', '#64748b', '#94a3b8', '#cbd5e1'
+                ],
+                borderWidth: 2,
+                borderColor: '#ffffff'
             }]
         },
-        options: { responsive: true }
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        boxWidth: 10,
+                        padding: 8,
+                        font: { size: 10 }
+                    }
+                }
+            },
+            cutout: '68%'
+        }
     });
 
+    // 3. Mailbox Breakdown Horizontal Bar
     new Chart(document.getElementById('chartMailboxes'), {
         type: 'bar',
         data: {
             labels: {!! json_encode(array_keys($mailboxData)) !!},
             datasets: [{
-                label: 'Leads Received',
+                label: 'Inquiries Received',
                 data: {!! json_encode(array_values($mailboxData)) !!},
-                backgroundColor: '#06b6d4'
+                backgroundColor: '#0284c7',
+                borderRadius: 6,
+                maxBarThickness: 24
             }]
         },
-        options: { responsive: true }
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                x: {
+                    grid: { color: '#f1f5f9' },
+                    ticks: { precision: 0 }
+                },
+                y: {
+                    grid: { display: false }
+                }
+            }
+        }
     });
 
+    // 4. Shipment Type Distribution
     new Chart(document.getElementById('chartShipmentTypes'), {
-        type: 'pie',
+        type: 'doughnut',
         data: {
             labels: {!! json_encode(array_keys($shipmentTypeCounts)) !!},
             datasets: [{
                 data: {!! json_encode(array_values($shipmentTypeCounts)) !!},
-                backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#8b5cf6', '#ec4899', '#94a3b8']
+                backgroundColor: ['#0284c7', '#06b6d4', '#8b5cf6', '#10b981', '#f59e0b', '#94a3b8'],
+                borderWidth: 2,
+                borderColor: '#ffffff'
             }]
         },
-        options: { responsive: true }
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        boxWidth: 10,
+                        padding: 8,
+                        font: { size: 10 }
+                    }
+                }
+            },
+            cutout: '60%'
+        }
     });
 </script>
 @endpush
+
