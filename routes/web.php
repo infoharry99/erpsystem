@@ -12,6 +12,9 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return redirect()->route('shipment-leads.dashboard');
 });
+Route::get('/home', function () {
+    return redirect()->route('shipment-leads.dashboard');
+});
 
 // Guest Auth Routes
 Route::middleware('guest')->group(function (): void {
@@ -111,6 +114,14 @@ Route::get('/clear-cache', function () {
         $results[] = "Deduplication: Merged and removed {$dedupCount} duplicate lead(s) with identical email subjects.";
     } catch (\Throwable $e) {
         $results[] = 'Deduplication notice: ' . $e->getMessage();
+    }
+
+    // Prune false-positive non-inquiry leads (internal, payment, billing, membership, reports)
+    try {
+        $pruneCount = app(\App\Services\Lead\LeadService::class)->pruneNonLeads();
+        $results[] = "Pruning: Removed {$pruneCount} non-inquiry lead(s) (internal emails, payment reminders, membership renewals, reports).";
+    } catch (\Throwable $e) {
+        $results[] = 'Pruning notice: ' . $e->getMessage();
     }
 
     // Check actual content of index.blade.php

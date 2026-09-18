@@ -69,37 +69,91 @@ class ShipmentExtractionService
         return 'unknown';
     }
 
+    protected function isValidLocationCandidate(?string $val): bool
+    {
+        if (empty($val)) return false;
+        $v = strtolower(trim($val));
+        if (strlen($v) < 3 || strlen($v) > 50) return false;
+
+        // Disallow emails, URLs, dates, numbers-only
+        if (str_contains($v, '@') || str_contains($v, 'http') || str_contains($v, '.com') || is_numeric($v)) {
+            return false;
+        }
+
+        // Disallow common words, verbs, people names, phrases that are not locations
+        $invalidTerms = [
+            'sign', 'plus', 'sign plus', 'explore', 'explore new', 'new op', 'statement', 'statements',
+            'reminder', 'payment', 'client', 'account', 'accounts', 'due', 'july', 'august', 'september',
+            'october', 'november', 'december', 'january', 'february', 'march', 'april', 'may', 'june',
+            'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday',
+            'office', 'us', 'you', 'our', 'your', 'my', 'their', 'below', 'above', 'please', 'thanks',
+            'regards', 'best', 'here', 'there', 'this', 'that', 'rana', 'khurram', 'mr', 'ms', 'mrs',
+            'team', 'customer', 'anyone', 'everyone', 'kindly', 'inform', 'confirm', 'advise', 'discuss'
+        ];
+
+        foreach ($invalidTerms as $term) {
+            if ($v === $term || str_starts_with($v, $term . ' ') || str_ends_with($v, ' ' . $term)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     protected function extractOrigin(string $content): ?string
     {
-        if (preg_match('/(?:EXW|EX-WORKS|EX WORKS|from)\s+([A-Z0-9\s,\.\'-]{2,30}?)\s+(?:TO|UNTIL|UPTO|PORT|AIRPORT|-|\/\/)/i', $content, $m)) {
+        // 1. Explicit logistics labels
+        if (preg_match('/(?:POL|AOL|ORIGIN|PORT OF LOADING|PORT OF ORIGIN)\s*:\s*([^\r\n]+)/i', $content, $m)) {
             $val = trim($m[1]);
-            if (strlen($val) > 2 && !preg_match('/(rate|quote|freight|charges)/i', $val)) {
+            if ($this->isValidLocationCandidate($val)) {
                 return $val;
             }
         }
-        if (preg_match('/POL\s*:\s*([^\r\n]+)/i', $content, $m)) {
-            return trim($m[1]);
+
+        if (preg_match('/(?:Place of pick up|Pickup address|Shipper Address|Collection Address)\s*:\s*([^\r\n]+)/i', $content, $m)) {
+            $val = trim($m[1]);
+            if ($this->isValidLocationCandidate($val)) {
+                return $val;
+            }
         }
-        if (preg_match('/AOL\s*:\s*([^\r\n]+)/i', $content, $m)) {
-            return trim($m[1]);
+
+        // 2. Clear route pattern: from [Origin] to [Destination]
+        if (preg_match('/(?:from|exw|ex-works)\s+([A-Za-z0-9\s,\.\'-]{2,30}?)\s+(?:to|-|➔|-->)\s+([A-Za-z0-9\s,\.\'-]{2,30}?)/i', $content, $m)) {
+            $orig = trim($m[1]);
+            if ($this->isValidLocationCandidate($orig)) {
+                return $orig;
+            }
         }
-        if (preg_match('/(?:Pickup|Collection)\s*(?:location|address)?\s*:\s*([^\r\n]+)/i', $content, $m)) {
-            return trim($m[1]);
-        }
+
         return null;
     }
 
     protected function extractDestination(string $content): ?string
     {
-        if (preg_match('/(?:TO|POD|AOD|DESTINATION|UPTO)\s*:\s*([^\r\n]+)/i', $content, $m)) {
-            return trim($m[1]);
-        }
-        if (preg_match('/(?:TO|UPTO)\s+([A-Z0-9\s,\.\'-]{2,30}?)\s*(?:PORT|AIRPORT|AIRPORT\b|PORT\b|\r|\n|$)/i', $content, $m)) {
+        // 1. Explicit logistics labels
+        if (preg_match('/(?:POD|AOD|DESTINATION|PORT OF DISCHARGE|PORT OF DELIVERY)\s*:\s*([^\r\n]+)/i', $content, $m)) {
             $val = trim($m[1]);
-            if (!preg_match('/(the|our|your|my|below|above)/i', $val)) {
+            if ($this->isValidLocationCandidate($val)) {
                 return $val;
             }
         }
+
+        // 2. Clear route pattern: to [Location] (Port / Airport / ICD / CFS)
+        if (preg_match('/(?:TO|UPTO)\s+([A-Za-z0-9\s,\.\'-]{2,30}?)\s+(?:PORT|AIRPORT|SEAPORT|ICD|CFS)\b/i', $content, $m)) {
+            $val = trim($m[1]);
+            if ($this->isValidLocationCandidate($val)) {
+                return $val;
+            }
+        }
+
+        // 3. From [Origin] to [Destination] pattern in quotation context
+        if (preg_match('/(?:from|exw|ex-works)\s+([A-Za-z0-9\s,\.\'-]{2,30}?)\s+(?:to|-|➔|-->)\s+([A-Za-z0-9\s,\.\'-]{2,30}?)(?:\s+(?:airport|port|seaport|icd|via|\n|\r|\/\/|,|\.))/i', $content, $m)) {
+            $dest = trim($m[2]);
+            if ($this->isValidLocationCandidate($dest)) {
+                return $dest;
+            }
+        }
+
         return null;
     }
 

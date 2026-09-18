@@ -388,5 +388,128 @@ class ShipmentLeadTest extends TestCase
 
         $this->assertEquals(\Webklex\PHPIMAP\IMAP::FT_PEEK, $client->getConfig()->get('options.fetch'));
     }
+
+    public function test_internal_emails_and_billing_are_excluded_from_leads(): void
+    {
+        $account = EmailAccount::create([
+            'name' => 'Support',
+            'email' => 'sales@globetrottersltd.com',
+            'imap_host' => 'imap.company.com',
+            'imap_port' => 993,
+            'imap_username' => 'sales@globetrottersltd.com',
+            'imap_password' => 'secret123',
+            'inbox_folder' => 'INBOX',
+            'status' => 'active',
+        ]);
+
+        $leadService = app(LeadService::class);
+
+        // Internal payment reminder email
+        $internalEmail = Email::create([
+            'email_account_id' => $account->id,
+            'message_id' => '<pay-reminder-01@globetrottersltd.com>',
+            'direction' => 'incoming',
+            'from_name' => 'Accounts Globetrotters',
+            'from_email' => 'accounts@globetrottersltd.com',
+            'to_email' => 'sales@globetrottersltd.com',
+            'subject' => 'RE: Payment due reminder',
+            'body_text' => 'Dear Rana, Please check the attached invoice and make sure statement is cleared.',
+            'is_read' => false,
+        ]);
+
+        $lead = $leadService->createLeadFromEmail($internalEmail);
+        $this->assertNull($lead, 'Internal accounts payment reminder email should never be created as a lead.');
+    }
+
+    public function test_membership_and_monthly_reports_are_excluded_from_leads(): void
+    {
+        $account = EmailAccount::create([
+            'name' => 'Main',
+            'email' => 'info@globetrottersltd.com',
+            'imap_host' => 'imap.company.com',
+            'imap_port' => 993,
+            'imap_username' => 'info@globetrottersltd.com',
+            'imap_password' => 'secret123',
+            'inbox_folder' => 'INBOX',
+            'status' => 'active',
+        ]);
+
+        $leadService = app(LeadService::class);
+
+        // GLA Membership Renewal
+        $membershipEmail = Email::create([
+            'email_account_id' => $account->id,
+            'message_id' => '<gla-renewal-01@glafamily.com>',
+            'direction' => 'incoming',
+            'from_name' => 'GLA Family',
+            'from_email' => 'member682@glafamily.com',
+            'to_email' => 'info@globetrottersltd.com',
+            'subject' => 'Re:Membership Renewal: GLA Account Documents Update and submission - ID 8066',
+            'body_text' => 'Please upload agreement to Sign Plus and complete e-stamp.',
+            'is_read' => false,
+        ]);
+
+        $lead1 = $leadService->createLeadFromEmail($membershipEmail);
+        $this->assertNull($lead1, 'Membership renewal email should never be created as a lead.');
+
+        // JCtrans Monthly Report
+        $reportEmail = Email::create([
+            'email_account_id' => $account->id,
+            'message_id' => '<jctrans-report-01@report.ejctrans.com>',
+            'direction' => 'incoming',
+            'from_name' => 'JCtrans',
+            'from_email' => 'customer@report.ejctrans.com',
+            'to_email' => 'info@globetrottersltd.com',
+            'subject' => 'JCtrans Monthly Report',
+            'body_text' => 'Dear member, here is your monthly report from Shanghai port network to explore new op.',
+            'is_read' => false,
+        ]);
+
+        $lead2 = $leadService->createLeadFromEmail($reportEmail);
+        $this->assertNull($lead2, 'Monthly report newsletter should never be created as a lead.');
+    }
+
+    public function test_prune_non_leads_removes_mistaken_leads(): void
+    {
+        $account = EmailAccount::create([
+            'name' => 'Main',
+            'email' => 'info@globetrottersltd.com',
+            'imap_host' => 'imap.company.com',
+            'imap_port' => 993,
+            'imap_username' => 'info@globetrottersltd.com',
+            'imap_password' => 'secret123',
+            'inbox_folder' => 'INBOX',
+            'status' => 'active',
+        ]);
+
+        $badLead = Lead::create([
+            'email_account_id' => $account->id,
+            'customer_name' => 'Accounts',
+            'customer_email' => 'accounts@globetrottersltd.com',
+            'email_subject' => 'RE: Payment due reminder',
+            'original_content' => 'Please clear the balance payable.',
+            'shipment_type' => 'air_freight',
+            'lead_status' => 'new',
+            'reply_status' => 'pending',
+        ]);
+
+        $goodLead = Lead::create([
+            'email_account_id' => $account->id,
+            'customer_name' => 'Freight Customer',
+            'customer_email' => 'customer@shipper.com',
+            'email_subject' => 'RFQ: Ocean Freight 2x40HC Shanghai to Felixstowe',
+            'original_content' => 'Please quote for 2x40HC from Shanghai to Felixstowe.',
+            'shipment_type' => 'sea_fcl',
+            'lead_status' => 'new',
+            'reply_status' => 'pending',
+        ]);
+
+        $leadService = app(LeadService::class);
+        $pruned = $leadService->pruneNonLeads();
+
+        $this->assertGreaterThanOrEqual(1, $pruned);
+        $this->assertDatabaseMissing('shipment_leads', ['id' => $badLead->id]);
+        $this->assertDatabaseHas('shipment_leads', ['id' => $goodLead->id]);
+    }
 }
 
