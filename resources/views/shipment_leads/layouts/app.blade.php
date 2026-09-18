@@ -36,8 +36,20 @@
             color: var(--gt-text-dark);
         }
 
-        h1, h2, h3, h4, .brand-heading {
-            font-family: 'Playfair Display', Georgia, serif;
+        h1, h2, h3, h4 {
+            font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+            font-weight: 700;
+            color: var(--gt-text-dark);
+        }
+        .page-main-title {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-weight: 700;
+            font-size: 1.15rem;
+            color: #0f172a;
+            letter-spacing: -0.2px;
+        }
+        .brand-heading {
+            font-family: 'Plus Jakarta Sans', sans-serif;
             font-weight: 700;
             color: var(--gt-text-dark);
         }
@@ -262,6 +274,69 @@
             border-color: #0284c7;
         }
 
+        /* Modern Compact Form Styling */
+        .card-modern {
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        }
+        .card-modern .card-header {
+            background-color: #ffffff;
+            border-bottom: 1px solid #f1f5f9;
+            padding: 0.75rem 1.25rem;
+            border-top-left-radius: 12px;
+            border-top-right-radius: 12px;
+        }
+        .form-section-title {
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: #0284c7;
+            margin-top: 1.25rem;
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.35rem;
+            border-bottom: 1px solid #f1f5f9;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .form-section-title:first-child {
+            margin-top: 0;
+        }
+        .form-compact .form-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #475569;
+            margin-bottom: 0.25rem;
+        }
+        .form-compact .form-control,
+        .form-compact .form-select {
+            font-size: 0.8125rem;
+            padding: 0.42rem 0.7rem;
+            border-radius: 8px;
+            border: 1px solid #cbd5e1;
+            color: #1e293b;
+            background-color: #ffffff;
+            transition: all 0.15s ease;
+        }
+        .form-compact .form-control:focus,
+        .form-compact .form-select:focus {
+            border-color: #0284c7;
+            box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.12);
+            outline: none;
+        }
+        .form-compact .form-control::placeholder {
+            color: #94a3b8;
+            font-size: 0.8rem;
+        }
+        .form-hint {
+            font-size: 0.72rem;
+            color: #94a3b8;
+            margin-top: 0.25rem;
+        }
+
         /* Badges */
         .badge-replied {
             background-color: #10b981;
@@ -399,7 +474,7 @@
     <!-- Top Navbar -->
     <div class="navbar-top d-flex justify-content-between align-items-center">
         <div>
-            <h3 class="m-0 brand-heading">@yield('page_title', 'Dashboard')</h3>
+            <h4 class="m-0 page-main-title">@yield('page_title', 'Dashboard')</h4>
         </div>
         <div class="d-flex align-items-center gap-3">
             <span class="text-muted small" id="lastSyncText">
