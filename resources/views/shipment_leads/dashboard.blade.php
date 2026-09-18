@@ -204,52 +204,81 @@
         </a>
     </div>
     <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle m-0">
-                <thead class="table-light">
+        <div class="table-responsive" style="overflow-x: hidden;">
+            <table class="table-leads m-0">
+                <thead>
                     <tr>
-                        <th>Date</th>
-                        <th>Customer</th>
-                        <th>Subject</th>
-                        <th>Origin - Destination</th>
-                        <th>Reply Status</th>
-                        <th>Lead Status</th>
-                        <th>Action</th>
+                        <th style="width: 12%;"># / Date</th>
+                        <th style="width: 22%;">Customer</th>
+                        <th style="width: 28%;">Subject</th>
+                        <th style="width: 18%;">Route</th>
+                        <th style="width: 12%;">Status</th>
+                        <th style="width: 8%; text-align: center;">Action</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($recentLeads as $lead)
-                        <tr>
-                            <td><small class="text-muted">{{ $lead->received_date ? $lead->received_date->format('M d, H:i') : '-' }}</small></td>
+                        @php
+                            $initials = '';
+                            $nameClean = trim($lead->customer_name ?? '');
+                            $nameParts = preg_split('/\s+/', $nameClean);
+                            if (!empty($nameParts[0])) $initials .= strtoupper(substr($nameParts[0], 0, 1));
+                            if (isset($nameParts[1]) && !empty($nameParts[1])) $initials .= strtoupper(substr($nameParts[1], 0, 1));
+                            if (empty($initials)) $initials = strtoupper(substr($lead->customer_email ?? 'CL', 0, 2));
+                            $avatarColorIndex = abs(crc32($lead->customer_email ?? $lead->customer_name ?? '')) % 6;
+                        @endphp
+                        <tr class="{{ $lead->reply_status === 'not_replied' ? 'lead-unreplied' : '' }}">
                             <td>
-                                <strong>{{ $lead->customer_name }}</strong><br>
-                                <small class="text-muted">{{ $lead->customer_email }}</small>
-                            </td>
-                            <td><span class="d-inline-block text-truncate" style="max-width: 250px;">{{ $lead->email_subject }}</span></td>
-                            <td>
-                                <small class="fw-bold">{{ $lead->origin ?: 'TBD' }}</small>
-                                <i class="fa-solid fa-arrow-right text-muted mx-1"></i>
-                                <small class="fw-bold">{{ $lead->destination ?: 'TBD' }}</small>
-                            </td>
-                            <td>
-                                @if($lead->reply_status === 'replied')
-                                    <span class="badge badge-replied"><i class="fa-solid fa-check me-1"></i> Replied</span>
-                                @else
-                                    <span class="badge badge-not-replied"><i class="fa-solid fa-xmark me-1"></i> Not Replied</span>
-                                @endif
+                                <div class="fw-bold text-dark">#{{ $lead->id }}</div>
+                                <div class="text-muted" style="font-size: 0.7rem;">{{ $lead->received_date ? $lead->received_date->format('M d, H:i') : '-' }}</div>
                             </td>
                             <td>
-                                <span class="badge bg-secondary text-capitalize">{{ str_replace('_', ' ', $lead->lead_status) }}</span>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="avatar-initial avatar-bg-{{ $avatarColorIndex }}" style="width: 28px; height: 28px; min-width: 28px; font-size: 0.7rem;">
+                                        {{ $initials }}
+                                    </div>
+                                    <div class="text-truncate" style="min-width: 0;">
+                                        <div class="fw-semibold text-dark text-truncate" title="{{ $lead->customer_name }}">{{ $lead->customer_name ?: 'Unknown' }}</div>
+                                        <div class="text-muted text-truncate" style="font-size: 0.7rem;">{{ $lead->customer_email }}</div>
+                                    </div>
+                                </div>
                             </td>
                             <td>
-                                <a href="{{ route('shipment-leads.leads.show', $lead->id) }}" class="btn btn-sm btn-outline-dark">
-                                    Details
+                                <div class="text-truncate">
+                                    <span class="fw-semibold text-dark text-truncate d-block" title="{{ $lead->email_subject }}">
+                                        {{ $lead->email_subject ?: 'No Subject' }}
+                                    </span>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="pill-route" title="{{ ($lead->origin ?: 'TBD') . ' → ' . ($lead->destination ?: 'TBD') }}">
+                                    <span>{{ $lead->origin ?: 'TBD' }}</span>
+                                    <i class="fa-solid fa-arrow-right text-muted mx-1" style="font-size: 0.65rem;"></i>
+                                    <span>{{ $lead->destination ?: 'TBD' }}</span>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="d-flex flex-column gap-1 align-items-start">
+                                    @if($lead->reply_status === 'replied')
+                                        <span class="pill-status pill-replied">
+                                            <i class="fa-solid fa-circle-check me-1" style="font-size: 0.55rem;"></i>Replied
+                                        </span>
+                                    @else
+                                        <span class="pill-status pill-not-replied">
+                                            <i class="fa-solid fa-circle-exclamation me-1" style="font-size: 0.55rem;"></i>Not Replied
+                                        </span>
+                                    @endif
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                <a href="{{ route('shipment-leads.leads.show', $lead->id) }}" class="btn-action-open" title="Open Lead">
+                                    <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 0.7rem;"></i> Open
                                 </a>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="text-center py-4 text-muted">No shipment leads received yet. Click "Refresh Emails" to sync mailboxes.</td>
+                            <td colspan="6" class="text-center py-4 text-muted">No shipment leads received yet. Click "Refresh Emails" to sync mailboxes.</td>
                         </tr>
                     @endforelse
                 </tbody>

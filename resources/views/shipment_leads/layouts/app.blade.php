@@ -64,7 +64,7 @@
             min-height: 100vh;
             background-color: var(--gt-white);
             color: var(--gt-text-dark);
-            width: 260px;
+            width: 230px;
             position: fixed;
             top: 0;
             left: 0;
@@ -76,10 +76,11 @@
 
         .sidebar .nav-link {
             color: #475569;
-            padding: 0.75rem 1.25rem;
+            padding: 0.65rem 1rem;
             font-weight: 600;
+            font-size: 0.875rem;
             border-radius: 0.5rem;
-            margin: 0.2rem 0.75rem;
+            margin: 0.15rem 0.5rem;
             transition: all 0.2s ease;
         }
         .sidebar .nav-link:hover {
@@ -92,22 +93,144 @@
             box-shadow: 0 4px 10px rgba(2, 132, 199, 0.3);
         }
         .sidebar .nav-link i {
-            width: 1.5rem;
+            width: 1.35rem;
         }
 
-        /* Main Content Layout */
+        /* Main Content Layout - Maximized Horizontal Room */
         .main-content {
-            margin-left: 260px;
-            padding: 2rem 2.5rem;
+            margin-left: 230px;
+            padding: 1.15rem 1.5rem;
         }
 
         /* Top Navbar - Clean White & Light Blue */
         .navbar-top {
             background-color: var(--gt-white);
             border-bottom: 1px solid var(--gt-blue-border);
-            padding: 0.85rem 2.5rem;
-            margin-left: 260px;
+            padding: 0.7rem 1.5rem;
+            margin-left: 230px;
             box-shadow: 0 1px 3px rgba(2, 132, 199, 0.05);
+        }
+
+        /* Modern Compact Table Styles */
+        .table-leads {
+            width: 100%;
+            table-layout: fixed;
+            font-size: 0.8125rem;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+        .table-leads thead th {
+            background-color: #f8fafc;
+            color: #64748b;
+            font-weight: 700;
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 0.65rem 0.6rem;
+            border-bottom: 1px solid #e2e8f0;
+            white-space: nowrap;
+        }
+        .table-leads tbody td {
+            padding: 0.65rem 0.6rem;
+            vertical-align: middle;
+            border-bottom: 1px solid #f1f5f9;
+            color: #1e293b;
+            background-color: #ffffff;
+        }
+        .table-leads tbody tr {
+            transition: background-color 0.15s ease;
+        }
+        .table-leads tbody tr:hover td {
+            background-color: #f8fafc !important;
+        }
+        .table-leads tbody tr.lead-unreplied td:first-child {
+            border-left: 3.5px solid #f59e0b;
+        }
+
+        /* Avatar Circle for Initials */
+        .avatar-initial {
+            width: 32px;
+            height: 32px;
+            min-width: 32px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.75rem;
+            letter-spacing: -0.5px;
+        }
+        .avatar-bg-0 { background-color: #e0f2fe; color: #0284c7; }
+        .avatar-bg-1 { background-color: #dcfce7; color: #16a34a; }
+        .avatar-bg-2 { background-color: #fef3c7; color: #d97706; }
+        .avatar-bg-3 { background-color: #f3e8ff; color: #9333ea; }
+        .avatar-bg-4 { background-color: #ffe4e6; color: #e11d48; }
+        .avatar-bg-5 { background-color: #ccfbf1; color: #0d9488; }
+
+        /* Modern Status Pills */
+        .pill-status {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.2rem 0.55rem;
+            border-radius: 9999px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            white-space: nowrap;
+            line-height: 1.2;
+        }
+        .pill-replied {
+            background-color: #ecfdf5;
+            color: #059669;
+            border: 1px solid #a7f3d0;
+        }
+        .pill-not-replied {
+            background-color: #fff1f2;
+            color: #e11d48;
+            border: 1px solid #fecdd3;
+        }
+        .pill-type {
+            background-color: #f0f9ff;
+            color: #0284c7;
+            border: 1px solid #bae6fd;
+        }
+        .pill-route {
+            background-color: #f8fafc;
+            color: #334155;
+            border: 1px solid #e2e8f0;
+            font-size: 0.72rem;
+            padding: 0.18rem 0.45rem;
+            border-radius: 4px;
+            display: inline-block;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .pill-lead-status {
+            background-color: #f1f5f9;
+            color: #475569;
+            border: 1px solid #cbd5e1;
+            font-size: 0.7rem;
+            text-transform: capitalize;
+        }
+        .btn-action-open {
+            padding: 0.25rem 0.6rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            border-radius: 6px;
+            background-color: #f0f9ff;
+            color: #0284c7;
+            border: 1px solid #bae6fd;
+            transition: all 0.15s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .btn-action-open:hover {
+            background-color: #0284c7;
+            color: #ffffff;
+            border-color: #0284c7;
         }
 
         /* Badges */
