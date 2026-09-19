@@ -387,6 +387,7 @@ class ShipmentLeadTest extends TestCase
         $client = $service->getClient($account);
 
         $this->assertEquals(\Webklex\PHPIMAP\IMAP::FT_PEEK, $client->getConfig()->get('options.fetch'));
+        $this->assertFalse($client->getConfig()->get('options.fetch_body'));
     }
 
     public function test_internal_emails_and_billing_are_excluded_from_leads(): void

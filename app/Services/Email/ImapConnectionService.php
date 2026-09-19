@@ -17,7 +17,7 @@ class ImapConnectionService
                 'version' => '1.0.0',
                 'fetch' => \Webklex\PHPIMAP\IMAP::FT_PEEK,
                 'sequence' => \Webklex\PHPIMAP\IMAP::ST_UID,
-                'fetch_body' => true,
+                'fetch_body' => false,
                 'fetch_flags' => true,
                 'soft_fail' => true,
                 'rfc822' => true,
@@ -33,6 +33,8 @@ class ImapConnectionService
                     'protocol'      => 'imap',
                     'options'       => [
                         'fetch' => \Webklex\PHPIMAP\IMAP::FT_PEEK,
+                        'sequence' => \Webklex\PHPIMAP\IMAP::ST_UID,
+                        'fetch_body' => false,
                     ],
                 ]
             ]

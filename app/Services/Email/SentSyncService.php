@@ -49,10 +49,11 @@ class SentSyncService
                 return $stats;
             }
 
-            // Query latest 40 sent emails descending using leaveUnread() to maintain read-only IMAP state
+            // Query latest 40 sent emails descending using setFetchBody(false) to maintain read-only IMAP state
             try {
                 $messages = $folder->query()
                     ->leaveUnread()
+                    ->setFetchBody(false)
                     ->since(now()->subDays(14))
                     ->setFetchOrderDesc()
                     ->limit(40)
@@ -61,6 +62,7 @@ class SentSyncService
                 if ($messages->count() === 0) {
                     $messages = $folder->query()
                         ->leaveUnread()
+                        ->setFetchBody(false)
                         ->all()
                         ->setFetchOrderDesc()
                         ->limit(40)
@@ -70,6 +72,7 @@ class SentSyncService
                 Log::warning("Sent query fallback for {$account->email}: " . $e->getMessage());
                 $messages = $folder->query()
                     ->leaveUnread()
+                    ->setFetchBody(false)
                     ->all()
                     ->setFetchOrderDesc()
                     ->limit(40)
@@ -100,6 +103,13 @@ class SentSyncService
                             $stats['replies_detected']++;
                         }
                         continue;
+                    }
+
+                    // For new outgoing email only, fetch body
+                    try {
+                        $msg->parseBody();
+                    } catch (\Throwable $be) {
+                        Log::warning("Could not parse sent body for UID {$uid}: " . $be->getMessage());
                     }
 
                     $to = $msg->getTo()[0] ?? null;

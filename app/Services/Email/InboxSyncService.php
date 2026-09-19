@@ -43,10 +43,11 @@ class InboxSyncService
                 throw new \Exception("Inbox folder '{$inboxName}' not found for account {$account->email}");
             }
 
-            // Query latest 40 emails descending using leaveUnread() to never alter Gmail read/unread flags
+            // Query latest 40 emails descending without fetching bodies upfront to maintain Gmail unread flags
             try {
                 $messages = $folder->query()
                     ->leaveUnread()
+                    ->setFetchBody(false)
                     ->since(now()->subDays(14))
                     ->setFetchOrderDesc()
                     ->limit(40)
@@ -55,6 +56,7 @@ class InboxSyncService
                 if ($messages->count() === 0) {
                     $messages = $folder->query()
                         ->leaveUnread()
+                        ->setFetchBody(false)
                         ->all()
                         ->setFetchOrderDesc()
                         ->limit(40)
@@ -64,6 +66,7 @@ class InboxSyncService
                 Log::warning("Since query fallback for {$account->email}: " . $e->getMessage());
                 $messages = $folder->query()
                     ->leaveUnread()
+                    ->setFetchBody(false)
                     ->all()
                     ->setFetchOrderDesc()
                     ->limit(40)
@@ -77,13 +80,14 @@ class InboxSyncService
                     $messageId = $msg->getMessageId();
                     $uid = $msg->getUid();
 
-                    // Read-only check of Gmail's current read/unread status
-                    $isReadInGmail = false;
+                    // Read-only check of Gmail's original read/unread status before touching body
+                    $wasUnreadInGmail = false;
                     try {
-                        $isReadInGmail = (bool) $msg->hasFlag('seen');
+                        $wasUnreadInGmail = !$msg->hasFlag('seen');
                     } catch (\Throwable $fe) {
-                        $isReadInGmail = false;
+                        $wasUnreadInGmail = false;
                     }
+                    $isReadInGmail = !$wasUnreadInGmail;
 
                     $existingEmail = Email::where('email_account_id', $account->id)
                         ->where(function ($query) use ($messageId, $uid) {
@@ -104,8 +108,26 @@ class InboxSyncService
                                 $existingEmail->lead->update(['is_read' => $isReadInGmail]);
                             }
                         }
+
+                        // Ensure unread status in Gmail remains completely preserved
+                        if ($wasUnreadInGmail) {
+                            $this->ensureUnreadInGmail($client, $msg, $uid);
+                        }
+
                         $stats['skipped']++;
                         continue;
+                    }
+
+                    // For new incoming emails only, fetch message body
+                    try {
+                        $msg->parseBody();
+                    } catch (\Throwable $be) {
+                        Log::warning("Could not parse body for UID {$uid}: " . $be->getMessage());
+                    }
+
+                    // Immediately restore unread status in Gmail if originally unread
+                    if ($wasUnreadInGmail) {
+                        $this->ensureUnreadInGmail($client, $msg, $uid);
                     }
 
                     $from = $msg->getFrom()[0] ?? null;
@@ -154,6 +176,11 @@ class InboxSyncService
                         }
                     }
 
+                    // Double-verify Gmail unread status is preserved after attachments
+                    if ($wasUnreadInGmail) {
+                        $this->ensureUnreadInGmail($client, $msg, $uid);
+                    }
+
                     $lead = $this->leadService->createLeadFromEmail($emailRecord);
                     if ($lead && $lead->wasRecentlyCreated) {
                         $stats['leads_created']++;
@@ -178,6 +205,42 @@ class InboxSyncService
         }
 
         return $stats;
+    }
+
+    /**
+     * Ensure an email message remains UNREAD in Gmail after IMAP inspection/fetching.
+     */
+    protected function ensureUnreadInGmail($client, $msg, $uid): void
+    {
+        // 1. Webklex Message unsetFlag
+        try {
+            if ($msg && method_exists($msg, 'unsetFlag')) {
+                $msg->unsetFlag('Seen');
+            }
+        } catch (\Throwable $e) {
+            // fallback
+        }
+
+        // 2. Direct IMAP STORE command on connection
+        try {
+            if ($client && method_exists($client, 'getConnection') && $client->getConnection()) {
+                $client->getConnection()->store(['\\Seen'], (int)$uid, (int)$uid, '-', true, \Webklex\PHPIMAP\IMAP::ST_UID);
+            }
+        } catch (\Throwable $e) {
+            // fallback
+        }
+
+        // 3. Native PHP imap_clearflag_full if legacy stream is active
+        try {
+            if (function_exists('imap_clearflag_full') && $client && method_exists($client, 'getConnection') && $client->getConnection() && method_exists($client->getConnection(), 'getStream')) {
+                $stream = $client->getConnection()->getStream();
+                if ($stream) {
+                    @imap_clearflag_full($stream, (string)$uid, "\\Seen", defined('ST_UID') ? ST_UID : 1);
+                }
+            }
+        } catch (\Throwable $e) {
+            // fallback
+        }
     }
 
     protected function decodeHeader(?string $str): string
