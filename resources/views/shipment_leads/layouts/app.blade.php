@@ -479,7 +479,7 @@
         <div class="d-flex align-items-center gap-3">
             <span class="text-muted small" id="lastSyncText">
                 <i class="fa-regular fa-clock me-1"></i>
-                Last Sync: <strong id="lastSyncTime">{{ $lastSyncTime ?? 'Not synced yet' }}</strong>
+                Last Sync: <strong id="lastSyncTime">{{ !empty($lastSyncTime) ? \Carbon\Carbon::parse($lastSyncTime)->timezone('Europe/London')->format('M d, H:i') . ' (UK)' : 'Not synced yet' }}</strong>
             </span>
 
             <a href="/clear-cache" class="btn btn-outline-secondary btn-sm" title="Clear System and View Cache">

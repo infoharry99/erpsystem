@@ -116,7 +116,7 @@ class EmailSyncController extends Controller
                     'replies' => $totalReplies,
                     'skipped' => $totalSkipped,
                 ],
-                'last_sync_formatted' => now()->format('Y-m-d H:i:s'),
+                'last_sync_formatted' => now()->timezone('Europe/London')->format('M d, H:i') . ' (UK)',
             ]);
         } finally {
             $lock->release();

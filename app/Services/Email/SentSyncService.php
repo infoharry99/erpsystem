@@ -118,7 +118,7 @@ class SentSyncService
                     $from = $msg->getFrom()[0] ?? null;
                     $fromEmail = $from ? $from->mail : $account->email;
 
-                    $sentDate = $msg->getDate() ? Carbon::parse($msg->getDate()->toString()) : now();
+                    $sentDate = $msg->getDate() ? Carbon::parse($msg->getDate()->toString())->setTimezone(config('app.timezone', 'Europe/London')) : now();
 
                     $outgoingRecord = Email::create([
                         'email_account_id' => $account->id,

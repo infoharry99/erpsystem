@@ -140,7 +140,7 @@ class InboxSyncService
                     $subject = $this->decodeHeader($msg->getSubject() ?: '(No Subject)');
                     $bodyHtml = $msg->getHTMLBody();
                     $bodyText = $msg->getTextBody();
-                    $receivedDate = $msg->getDate() ? Carbon::parse($msg->getDate()->toString()) : now();
+                    $receivedDate = $msg->getDate() ? Carbon::parse($msg->getDate()->toString())->setTimezone(config('app.timezone', 'Europe/London')) : now();
 
                     $emailRecord = Email::create([
                         'email_account_id' => $account->id,
