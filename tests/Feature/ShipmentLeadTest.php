@@ -215,6 +215,65 @@ class ShipmentLeadTest extends TestCase
         $responseAccounts->assertStatus(200);
     }
 
+    public function test_public_home_page_shows_inquiry_stats_without_login_and_protects_details(): void
+    {
+        $account = EmailAccount::create([
+            'name' => 'Sales Desk',
+            'email' => 'sales@company.com',
+            'imap_host' => 'imap.company.com',
+            'imap_port' => 993,
+            'imap_username' => 'sales@company.com',
+            'imap_password' => 'secret123',
+            'status' => 'active',
+        ]);
+
+        $email = Email::create([
+            'email_account_id' => $account->id,
+            'message_id' => '<inquiry-pub-99@customer.com>',
+            'direction' => 'incoming',
+            'from_name' => 'John Doe Secret',
+            'from_email' => 'private-john@customer.com',
+            'to_email' => 'sales@company.com',
+            'subject' => 'Confidential Quotation for 40ft Container',
+            'body_text' => 'Secret shipment details text',
+            'received_at' => now(),
+        ]);
+
+        $lead = Lead::create([
+            'email_id' => $email->id,
+            'email_account_id' => $account->id,
+            'customer_name' => 'John Doe Secret',
+            'customer_email' => 'private-john@customer.com',
+            'subject' => 'Confidential Quotation for 40ft Container',
+            'shipment_type' => 'sea_fcl',
+            'reply_status' => 'not_replied',
+            'lead_status' => 'new',
+            'received_date' => now(),
+        ]);
+
+        // 1. Unauthenticated guest visits public home page
+        $response = $this->get(route('home'));
+        $response->assertStatus(200);
+        $response->assertSee('Total Inquiries');
+        $response->assertSee('Waiting For Reply');
+        $response->assertSee('Replied Inquiries');
+        $response->assertSee('Sign In to View Details');
+
+        // Verify counts are shown but confidential customer body and email are NOT exposed on public home
+        $response->assertDontSee('private-john@customer.com');
+        $response->assertDontSee('Secret shipment details text');
+
+        // 2. Unauthenticated guest attempts to view lead details
+        $detailResponse = $this->get(route('shipment-leads.leads.show', $lead->id));
+        $detailResponse->assertRedirect(route('login'));
+
+        // 3. Authenticated user can view details
+        $this->actingAs($this->user);
+        $authDetailResponse = $this->get(route('shipment-leads.leads.show', $lead->id));
+        $authDetailResponse->assertStatus(200);
+        $authDetailResponse->assertSee('John Doe Secret');
+    }
+
     public function test_duplicate_email_subject_only_creates_one_lead(): void
     {
         $account = EmailAccount::create([

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ShipmentLead\DashboardController;
 use App\Http\Controllers\ShipmentLead\EmailAccountController;
 use App\Http\Controllers\ShipmentLead\EmailSyncController;
@@ -8,13 +9,9 @@ use App\Http\Controllers\ShipmentLead\LeadController;
 use App\Http\Controllers\ShipmentLead\UserManagementController;
 use Illuminate\Support\Facades\Route;
 
-// Redirect root to dashboard (auth middleware will handle login redirect if unauthenticated)
-Route::get('/', function () {
-    return redirect()->route('shipment-leads.dashboard');
-});
-Route::get('/home', function () {
-    return redirect()->route('shipment-leads.dashboard');
-});
+// Public Home Page: shows live inquiry volume and response status without requiring login
+Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::get('/home', [HomeController::class, 'index']);
 
 // Guest Auth Routes
 Route::middleware('guest')->group(function (): void {

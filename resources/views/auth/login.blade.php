@@ -135,6 +135,11 @@
                 </button>
             </form>
 
+            <div class="text-center mt-3 pt-2 border-top">
+                <a href="{{ route('home') }}" class="text-decoration-none text-muted small">
+                    <i class="fa-solid fa-arrow-left me-1"></i> Back to Public Status Board
+                </a>
+            </div>
 
         </div>
     </div>
