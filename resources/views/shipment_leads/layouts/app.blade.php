@@ -441,6 +441,11 @@
                 </a>
             </li>
             <li>
+                <a href="{{ route('shipment-leads.excluded-domains.index') }}" class="nav-link {{ request()->routeIs('shipment-leads.excluded-domains*') ? 'active' : '' }}">
+                    <i class="fa-solid fa-ban text-danger"></i> Excluded Domains
+                </a>
+            </li>
+            <li>
                 <a href="{{ route('shipment-leads.users.index') }}" class="nav-link {{ request()->routeIs('shipment-leads.users*') ? 'active' : '' }}">
                     <i class="fa-solid fa-users-gear"></i> Team Users
                 </a>

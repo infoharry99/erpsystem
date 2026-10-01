@@ -5,6 +5,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ShipmentLead\DashboardController;
 use App\Http\Controllers\ShipmentLead\EmailAccountController;
 use App\Http\Controllers\ShipmentLead\EmailSyncController;
+use App\Http\Controllers\ShipmentLead\ExcludedDomainController;
 use App\Http\Controllers\ShipmentLead\LeadController;
 use App\Http\Controllers\ShipmentLead\UserManagementController;
 use Illuminate\Support\Facades\Route;
@@ -36,6 +37,13 @@ Route::middleware('auth')->group(function (): void {
         Route::get('/accounts/{id}/edit', [EmailAccountController::class, 'edit'])->name('accounts.edit')->whereNumber('id');
         Route::put('/accounts/{id}', [EmailAccountController::class, 'update'])->name('accounts.update')->whereNumber('id');
         Route::delete('/accounts/{id}', [EmailAccountController::class, 'destroy'])->name('accounts.destroy')->whereNumber('id');
+
+        // Excluded Domains Management (Lead Blacklist)
+        Route::get('/excluded-domains', [ExcludedDomainController::class, 'index'])->name('excluded-domains.index');
+        Route::post('/excluded-domains', [ExcludedDomainController::class, 'store'])->name('excluded-domains.store');
+        Route::patch('/excluded-domains/{id}/toggle', [ExcludedDomainController::class, 'toggle'])->name('excluded-domains.toggle')->whereNumber('id');
+        Route::delete('/excluded-domains/{id}', [ExcludedDomainController::class, 'destroy'])->name('excluded-domains.destroy')->whereNumber('id');
+        Route::post('/excluded-domains/prune', [ExcludedDomainController::class, 'pruneLeads'])->name('excluded-domains.prune');
 
         // Leads Management
         Route::get('/leads', [LeadController::class, 'index'])->name('leads.index');

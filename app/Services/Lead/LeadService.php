@@ -3,6 +3,7 @@
 namespace App\Services\Lead;
 
 use App\Models\ShipmentLead\Email;
+use App\Models\ShipmentLead\ExcludedDomain;
 use App\Models\ShipmentLead\Lead;
 use Illuminate\Support\Facades\Log;
 
@@ -129,6 +130,12 @@ class LeadService
         $fromEmail = strtolower(trim($senderEmail ?? $email->from_email ?? ''));
         $subjectLower = strtolower(trim($subject));
         $fullContent = $subjectLower . ' ' . strtolower(trim($bodyText));
+
+        // 0. Excluded Domains table check (e.g. mesk.com, maersk.com)
+        if (!empty($fromEmail) && ExcludedDomain::isDomainExcluded($fromEmail)) {
+            Log::info("Filter classified email from '{$fromEmail}' as EXCLUDED DOMAIN. Skipping lead creation.");
+            return true;
+        }
 
         // 1. Internal colleague emails (sender domain matches mailbox account domain)
         $accountEmail = strtolower(trim($email->account->email ?? ''));
@@ -394,5 +401,32 @@ class LeadService
         }
 
         return $deletedCount;
+    }
+
+    /**
+     * Prune all existing leads created from an excluded domain.
+     */
+    public function pruneLeadsForDomain(string $domain): int
+    {
+        $domain = strtolower(trim($domain));
+        $domain = ltrim($domain, '@');
+        if (str_starts_with($domain, 'www.')) {
+            $domain = substr($domain, 4);
+        }
+
+        $leads = Lead::where(function ($query) use ($domain) {
+            $query->where('customer_email', 'like', '%@' . $domain)
+                  ->orWhere('customer_email', 'like', '%@%.' . $domain);
+        })->get();
+
+        $count = 0;
+        foreach ($leads as $lead) {
+            $lead->leadNotes()->delete();
+            $lead->delete();
+            $count++;
+            Log::info("Pruned lead ID #{$lead->id} because domain '{$domain}' is in Excluded Domains list.");
+        }
+
+        return $count;
     }
 }
