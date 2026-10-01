@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\ShipmentLead\Email;
 use App\Models\ShipmentLead\EmailAccount;
+use App\Models\ShipmentLead\ExcludedDomain;
 use App\Models\ShipmentLead\Lead;
 use App\Models\User;
 use App\Services\Email\ReplyDetectionService;
@@ -570,6 +571,100 @@ class ShipmentLeadTest extends TestCase
         $this->assertGreaterThanOrEqual(1, $pruned);
         $this->assertDatabaseMissing('shipment_leads', ['id' => $badLead->id]);
         $this->assertDatabaseHas('shipment_leads', ['id' => $goodLead->id]);
+    }
+
+    public function test_excluded_domain_emails_are_skipped_from_lead_creation(): void
+    {
+        // 1. Add mesk.com to excluded domains
+        ExcludedDomain::create([
+            'domain' => 'mesk.com',
+            'description' => 'Shipping line automated emails',
+            'is_active' => true,
+        ]);
+
+        $account = EmailAccount::create([
+            'name' => 'Support Desk',
+            'email' => 'sales@company.com',
+            'imap_host' => 'imap.company.com',
+            'imap_port' => 993,
+            'imap_username' => 'sales@company.com',
+            'imap_password' => 'secret123',
+            'inbox_folder' => 'INBOX',
+            'status' => 'active',
+        ]);
+
+        $leadService = app(LeadService::class);
+
+        // Incoming email from mesk.com
+        $emailFromMesk = Email::create([
+            'email_account_id' => $account->id,
+            'message_id' => '<alert-001@mesk.com>',
+            'direction' => 'incoming',
+            'from_name' => 'Maersk Notice',
+            'from_email' => 'alerts@mesk.com',
+            'to_email' => 'sales@company.com',
+            'subject' => 'Quote update: 20ft container pricing',
+            'body_text' => 'Please note container pricing update from Shanghai to London 20ft 2000kg.',
+            'received_at' => now(),
+        ]);
+
+        // Incoming email from subdomain of mesk.com
+        $emailFromSubMesk = Email::create([
+            'email_account_id' => $account->id,
+            'message_id' => '<alert-002@tracking.mesk.com>',
+            'direction' => 'incoming',
+            'from_name' => 'Tracking Maersk',
+            'from_email' => 'tracking@updates.mesk.com',
+            'to_email' => 'sales@company.com',
+            'subject' => 'Vessel arrival quote and schedule',
+            'body_text' => 'Schedule for 40ft container from Ningbo to Dubai.',
+            'received_at' => now(),
+        ]);
+
+        $lead1 = $leadService->createLeadFromEmail($emailFromMesk);
+        $lead2 = $leadService->createLeadFromEmail($emailFromSubMesk);
+
+        $this->assertNull($lead1, 'Email from mesk.com should be excluded from becoming a lead.');
+        $this->assertNull($lead2, 'Email from subdomain of mesk.com should be excluded from becoming a lead.');
+        $this->assertDatabaseMissing('shipment_leads', ['email_id' => $emailFromMesk->id]);
+        $this->assertDatabaseMissing('shipment_leads', ['email_id' => $emailFromSubMesk->id]);
+    }
+
+    public function test_excluded_domain_crud_and_pruning(): void
+    {
+        $this->actingAs($this->user);
+
+        // 1. Visit excluded domains index page
+        $res = $this->get(route('shipment-leads.excluded-domains.index'));
+        $res->assertStatus(200);
+        $res->assertSee('Excluded Domains');
+
+        // 2. Add domain via POST
+        $postRes = $this->post(route('shipment-leads.excluded-domains.store'), [
+            'domain' => 'https://www.shippingline.com/',
+            'description' => 'Carrier alerts',
+            'prune_existing' => 1,
+        ]);
+        $postRes->assertRedirect(route('shipment-leads.excluded-domains.index'));
+
+        $this->assertDatabaseHas('shipment_excluded_domains', [
+            'domain' => 'shippingline.com',
+            'description' => 'Carrier alerts',
+            'is_active' => true,
+        ]);
+
+        $item = ExcludedDomain::where('domain', 'shippingline.com')->first();
+
+        // 3. Toggle status
+        $toggleRes = $this->patch(route('shipment-leads.excluded-domains.toggle', $item->id));
+        $toggleRes->assertRedirect();
+        $item->refresh();
+        $this->assertFalse($item->is_active);
+
+        // 4. Delete domain
+        $deleteRes = $this->delete(route('shipment-leads.excluded-domains.destroy', $item->id));
+        $deleteRes->assertRedirect(route('shipment-leads.excluded-domains.index'));
+        $this->assertDatabaseMissing('shipment_excluded_domains', ['id' => $item->id]);
     }
 }
 
