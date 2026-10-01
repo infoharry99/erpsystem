@@ -4,6 +4,7 @@ namespace App\Services\Lead;
 
 use App\Models\ShipmentLead\Email;
 use App\Models\ShipmentLead\ExcludedDomain;
+use App\Models\ShipmentLead\ExcludedKeyword;
 use App\Models\ShipmentLead\Lead;
 use Illuminate\Support\Facades\Log;
 
@@ -134,6 +135,12 @@ class LeadService
         // 0. Excluded Domains table check (e.g. mesk.com, maersk.com)
         if (!empty($fromEmail) && ExcludedDomain::isDomainExcluded($fromEmail)) {
             Log::info("Filter classified email from '{$fromEmail}' as EXCLUDED DOMAIN. Skipping lead creation.");
+            return true;
+        }
+
+        // 0.1 Excluded Subject Keywords / Phrases check
+        if (!empty($subject) && ExcludedKeyword::isSubjectExcluded($subject)) {
+            Log::info("Filter classified email (Subject: '{$subject}') as EXCLUDED KEYWORD/PHRASE. Skipping lead creation.");
             return true;
         }
 
@@ -425,6 +432,29 @@ class LeadService
             $lead->delete();
             $count++;
             Log::info("Pruned lead ID #{$lead->id} because domain '{$domain}' is in Excluded Domains list.");
+        }
+
+        return $count;
+    }
+
+    /**
+     * Prune all existing leads whose email subjects match an excluded keyword or phrase.
+     */
+    public function pruneLeadsForKeyword(string $keyword): int
+    {
+        $keyword = strtolower(trim($keyword));
+        if (empty($keyword)) {
+            return 0;
+        }
+
+        $leads = Lead::where('email_subject', 'like', "%{$keyword}%")->get();
+
+        $count = 0;
+        foreach ($leads as $lead) {
+            $lead->leadNotes()->delete();
+            $lead->delete();
+            $count++;
+            Log::info("Pruned lead ID #{$lead->id} because subject matched excluded keyword '{$keyword}'.");
         }
 
         return $count;

@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\ShipmentLead\Email;
 use App\Models\ShipmentLead\EmailAccount;
 use App\Models\ShipmentLead\ExcludedDomain;
+use App\Models\ShipmentLead\ExcludedKeyword;
 use App\Models\ShipmentLead\Lead;
 use App\Models\User;
 use App\Services\Email\ReplyDetectionService;
@@ -665,6 +666,104 @@ class ShipmentLeadTest extends TestCase
         $deleteRes = $this->delete(route('shipment-leads.excluded-domains.destroy', $item->id));
         $deleteRes->assertRedirect(route('shipment-leads.excluded-domains.index'));
         $this->assertDatabaseMissing('shipment_excluded_domains', ['id' => $item->id]);
+    }
+
+    public function test_excluded_keyword_emails_are_skipped_from_lead_creation(): void
+    {
+        // 1. Add "monthly statement" and "job application" to excluded keywords
+        ExcludedKeyword::create([
+            'keyword' => 'monthly statement',
+            'description' => 'Finance statements',
+            'is_active' => true,
+        ]);
+        ExcludedKeyword::create([
+            'keyword' => 'job application',
+            'description' => 'HR Resumes',
+            'is_active' => true,
+        ]);
+
+        $account = EmailAccount::create([
+            'name' => 'General Inbox',
+            'email' => 'sales@company.com',
+            'imap_host' => 'imap.company.com',
+            'imap_port' => 993,
+            'imap_username' => 'sales@company.com',
+            'imap_password' => 'secret123',
+            'inbox_folder' => 'INBOX',
+            'status' => 'active',
+        ]);
+
+        $leadService = app(LeadService::class);
+
+        // Email with subject containing excluded phrase
+        $email1 = Email::create([
+            'email_account_id' => $account->id,
+            'message_id' => '<stmt-001@customer.com>',
+            'direction' => 'incoming',
+            'from_name' => 'Supplier Acc',
+            'from_email' => 'billing@supplier.com',
+            'to_email' => 'sales@company.com',
+            'subject' => 'Important: Monthly Statement for Account #4029',
+            'body_text' => 'Please find attached the monthly statement of account.',
+            'received_at' => now(),
+        ]);
+
+        $email2 = Email::create([
+            'email_account_id' => $account->id,
+            'message_id' => '<hr-002@candidate.com>',
+            'direction' => 'incoming',
+            'from_name' => 'Alex Candidate',
+            'from_email' => 'alex@candidate.com',
+            'to_email' => 'sales@company.com',
+            'subject' => 'Job Application: Freight Forwarding Coordinator',
+            'body_text' => 'Please consider my resume for freight coordinator.',
+            'received_at' => now(),
+        ]);
+
+        $lead1 = $leadService->createLeadFromEmail($email1);
+        $lead2 = $leadService->createLeadFromEmail($email2);
+
+        $this->assertNull($lead1, 'Email matching excluded keyword in subject should not become a lead.');
+        $this->assertNull($lead2, 'Email matching excluded phrase in subject should not become a lead.');
+        $this->assertDatabaseMissing('shipment_leads', ['email_id' => $email1->id]);
+        $this->assertDatabaseMissing('shipment_leads', ['email_id' => $email2->id]);
+    }
+
+    public function test_excluded_keyword_crud_and_pruning(): void
+    {
+        $this->actingAs($this->user);
+
+        // 1. Visit excluded keywords index page
+        $res = $this->get(route('shipment-leads.excluded-keywords.index'));
+        $res->assertStatus(200);
+        $res->assertSee('Excluded Keywords & Phrases');
+
+        // 2. Add keyword via POST
+        $postRes = $this->post(route('shipment-leads.excluded-keywords.store'), [
+            'keyword' => 'Payment Reminder',
+            'description' => 'Automated payment followups',
+            'prune_existing' => 1,
+        ]);
+        $postRes->assertRedirect(route('shipment-leads.excluded-keywords.index'));
+
+        $this->assertDatabaseHas('shipment_excluded_keywords', [
+            'keyword' => 'payment reminder',
+            'description' => 'Automated payment followups',
+            'is_active' => true,
+        ]);
+
+        $item = ExcludedKeyword::where('keyword', 'payment reminder')->first();
+
+        // 3. Toggle status
+        $toggleRes = $this->patch(route('shipment-leads.excluded-keywords.toggle', $item->id));
+        $toggleRes->assertRedirect();
+        $item->refresh();
+        $this->assertFalse($item->is_active);
+
+        // 4. Delete keyword
+        $deleteRes = $this->delete(route('shipment-leads.excluded-keywords.destroy', $item->id));
+        $deleteRes->assertRedirect(route('shipment-leads.excluded-keywords.index'));
+        $this->assertDatabaseMissing('shipment_excluded_keywords', ['id' => $item->id]);
     }
 }
 

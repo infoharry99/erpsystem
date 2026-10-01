@@ -446,6 +446,11 @@
                 </a>
             </li>
             <li>
+                <a href="{{ route('shipment-leads.excluded-keywords.index') }}" class="nav-link {{ request()->routeIs('shipment-leads.excluded-keywords*') ? 'active' : '' }}">
+                    <i class="fa-solid fa-filter-circle-xmark text-warning"></i> Excluded Keywords
+                </a>
+            </li>
+            <li>
                 <a href="{{ route('shipment-leads.users.index') }}" class="nav-link {{ request()->routeIs('shipment-leads.users*') ? 'active' : '' }}">
                     <i class="fa-solid fa-users-gear"></i> Team Users
                 </a>

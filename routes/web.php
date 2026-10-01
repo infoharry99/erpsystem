@@ -6,6 +6,7 @@ use App\Http\Controllers\ShipmentLead\DashboardController;
 use App\Http\Controllers\ShipmentLead\EmailAccountController;
 use App\Http\Controllers\ShipmentLead\EmailSyncController;
 use App\Http\Controllers\ShipmentLead\ExcludedDomainController;
+use App\Http\Controllers\ShipmentLead\ExcludedKeywordController;
 use App\Http\Controllers\ShipmentLead\LeadController;
 use App\Http\Controllers\ShipmentLead\UserManagementController;
 use Illuminate\Support\Facades\Route;
@@ -44,6 +45,13 @@ Route::middleware('auth')->group(function (): void {
         Route::patch('/excluded-domains/{id}/toggle', [ExcludedDomainController::class, 'toggle'])->name('excluded-domains.toggle')->whereNumber('id');
         Route::delete('/excluded-domains/{id}', [ExcludedDomainController::class, 'destroy'])->name('excluded-domains.destroy')->whereNumber('id');
         Route::post('/excluded-domains/prune', [ExcludedDomainController::class, 'pruneLeads'])->name('excluded-domains.prune');
+
+        // Excluded Subject Keywords / Phrases Management
+        Route::get('/excluded-keywords', [ExcludedKeywordController::class, 'index'])->name('excluded-keywords.index');
+        Route::post('/excluded-keywords', [ExcludedKeywordController::class, 'store'])->name('excluded-keywords.store');
+        Route::patch('/excluded-keywords/{id}/toggle', [ExcludedKeywordController::class, 'toggle'])->name('excluded-keywords.toggle')->whereNumber('id');
+        Route::delete('/excluded-keywords/{id}', [ExcludedKeywordController::class, 'destroy'])->name('excluded-keywords.destroy')->whereNumber('id');
+        Route::post('/excluded-keywords/prune', [ExcludedKeywordController::class, 'pruneLeads'])->name('excluded-keywords.prune');
 
         // Leads Management
         Route::get('/leads', [LeadController::class, 'index'])->name('leads.index');
