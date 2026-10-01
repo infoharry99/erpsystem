@@ -765,5 +765,53 @@ class ShipmentLeadTest extends TestCase
         $deleteRes->assertRedirect(route('shipment-leads.excluded-keywords.index'));
         $this->assertDatabaseMissing('shipment_excluded_keywords', ['id' => $item->id]);
     }
+
+    public function test_mark_not_a_lead_removes_lead_from_counts_and_optionally_excludes_domain(): void
+    {
+        $this->actingAs($this->user);
+
+        $account = EmailAccount::create([
+            'name' => 'General Desk',
+            'email' => 'sales@company.com',
+            'imap_host' => 'imap.company.com',
+            'imap_port' => 993,
+            'imap_username' => 'sales@company.com',
+            'imap_password' => 'secret123',
+            'inbox_folder' => 'INBOX',
+            'status' => 'active',
+        ]);
+
+        $lead = Lead::create([
+            'email_account_id' => $account->id,
+            'customer_name' => 'Vendor Rep',
+            'customer_email' => 'notices@vendorlines.com',
+            'email_subject' => 'Vessel Schedule Announcement Week 40',
+            'original_content' => 'Please find vessel schedule.',
+            'shipment_type' => 'sea_fcl',
+            'lead_status' => 'new',
+            'reply_status' => 'not_replied',
+            'received_date' => now(),
+        ]);
+
+        $this->assertEquals(1, Lead::count());
+
+        // Mark as Not a Lead with exclude_domain = 1
+        $res = $this->delete(route('shipment-leads.leads.mark-not-lead', $lead->id), [
+            'exclude_domain' => 1,
+        ]);
+
+        $res->assertRedirect(route('shipment-leads.leads.index'));
+        $res->assertSessionHas('success');
+
+        // Lead must be completely removed from database so it will not count as a lead
+        $this->assertDatabaseMissing('shipment_leads', ['id' => $lead->id]);
+        $this->assertEquals(0, Lead::count());
+
+        // Domain must now be in shipment_excluded_domains
+        $this->assertDatabaseHas('shipment_excluded_domains', [
+            'domain' => 'vendorlines.com',
+            'is_active' => true,
+        ]);
+    }
 }
 

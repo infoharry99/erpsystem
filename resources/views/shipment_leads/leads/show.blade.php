@@ -23,6 +23,10 @@
         @else
             <span class="badge badge-not-replied fs-6 px-3 py-2"><i class="fa-solid fa-circle-exclamation me-1"></i> Not Replied</span>
         @endif
+
+        <button type="button" class="btn btn-outline-danger btn-sm px-3 ms-2" data-bs-toggle="modal" data-bs-target="#notLeadShowModal" style="border-radius: 8px;">
+            <i class="fa-solid fa-ban me-1"></i> Not a Lead
+        </button>
     </div>
 </div>
 
@@ -278,6 +282,58 @@
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Mark as Not a Lead -->
+<div class="modal fade" id="notLeadShowModal" tabindex="-1" aria-labelledby="notLeadShowModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 12px; border: 1px solid #e2e8f0;">
+            <form method="POST" action="{{ route('shipment-leads.leads.mark-not-lead', $lead->id) }}">
+                @csrf
+                @method('DELETE')
+                <div class="modal-header py-3 bg-light" style="border-radius: 12px 12px 0 0;">
+                    <h6 class="modal-title fw-bold text-dark" id="notLeadShowModalLabel">
+                        <i class="fa-solid fa-ban text-danger me-2"></i>Mark Lead #{{ $lead->id }} as Not a Lead
+                    </h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-3">
+                    <p class="small text-dark mb-2">
+                        Are you sure you want to mark this email as <strong>Not a Lead</strong>?
+                    </p>
+                    <div class="p-2 mb-3 rounded-2 bg-light border small text-muted">
+                        <div><strong>Customer:</strong> <span class="text-dark fw-semibold">{{ $lead->customer_name }}</span></div>
+                        <div><strong>Email:</strong> <span class="text-primary">{{ $lead->customer_email }}</span></div>
+                        <div><strong>Subject:</strong> <span>{{ $lead->email_subject }}</span></div>
+                    </div>
+                    <div class="alert alert-warning py-2 px-3 small mb-3" style="font-size: 0.78rem;">
+                        <i class="fa-solid fa-triangle-exclamation me-1"></i>
+                        This lead will be permanently removed from your leads pipeline and will <strong>no longer count in Total Inquiries or Waiting for Reply</strong>.
+                    </div>
+                    @php
+                        $senderDomain = '';
+                        if ($lead->customer_email && str_contains($lead->customer_email, '@')) {
+                            $senderDomain = trim(substr(strrchr($lead->customer_email, '@'), 1));
+                        }
+                    @endphp
+                    @if($senderDomain)
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="exclude_domain" id="excludeDomainShow" value="1">
+                            <label class="form-check-label small text-dark" for="excludeDomainShow">
+                                Also blacklist domain <code class="fw-bold text-danger">{{ '@' . $senderDomain }}</code> in <strong>Excluded Domains</strong> so future emails from this company are never counted as leads.
+                            </label>
+                        </div>
+                    @endif
+                </div>
+                <div class="modal-footer py-2 bg-light" style="border-radius: 0 0 12px 12px;">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger btn-sm fw-semibold">
+                        <i class="fa-solid fa-ban me-1"></i> Confirm: Not a Lead
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>

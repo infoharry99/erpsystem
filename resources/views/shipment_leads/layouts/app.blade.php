@@ -273,6 +273,28 @@
             color: #ffffff;
             border-color: #0284c7;
         }
+        .btn-action-not-lead {
+            padding: 0.22rem 0.55rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            border-radius: 6px;
+            background-color: #fff1f2;
+            color: #e11d48;
+            border: 1px solid #fecdd3;
+            transition: all 0.15s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+        .btn-action-not-lead:hover {
+            background-color: #e11d48;
+            color: #ffffff;
+            border-color: #e11d48;
+        }
 
         /* Modern Compact Form Styling */
         .card-modern {

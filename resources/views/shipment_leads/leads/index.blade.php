@@ -202,9 +202,14 @@
 
                             <!-- Actions -->
                             <td class="text-center">
-                                <a href="{{ route('shipment-leads.leads.show', $lead->id) }}" class="btn-action-open" title="Open Lead Details">
-                                    <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 0.7rem;"></i> Open
-                                </a>
+                                <div class="d-inline-flex align-items-center gap-1">
+                                    <a href="{{ route('shipment-leads.leads.show', $lead->id) }}" class="btn-action-open" title="Open Lead Details">
+                                        <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 0.65rem;"></i> Open
+                                    </a>
+                                    <button type="button" class="btn-action-not-lead" onclick="openNotLeadModal({{ $lead->id }}, '{{ addslashes($lead->customer_name ?? 'Unknown') }}', '{{ addslashes($lead->customer_email) }}')" title="Mark as Not a Lead">
+                                        <i class="fa-solid fa-ban" style="font-size: 0.65rem;"></i> Not Lead
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                     @empty
@@ -228,4 +233,66 @@
         </div>
     </div>
 </div>
+
+<!-- Modal: Mark as Not a Lead -->
+<div class="modal fade" id="notLeadModal" tabindex="-1" aria-labelledby="notLeadModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 12px; border: 1px solid #e2e8f0;">
+            <form id="notLeadForm" method="POST" action="">
+                @csrf
+                @method('DELETE')
+                <div class="modal-header py-3 bg-light" style="border-radius: 12px 12px 0 0;">
+                    <h6 class="modal-title fw-bold text-dark" id="notLeadModalLabel">
+                        <i class="fa-solid fa-ban text-danger me-2"></i>Mark as Not a Lead
+                    </h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-3">
+                    <p class="small text-dark mb-2">
+                        Are you sure you want to mark this email as <strong>Not a Lead</strong>?
+                    </p>
+                    <div class="p-2 mb-3 rounded-2 bg-light border small text-muted">
+                        <div><strong>Customer:</strong> <span id="notLeadCustomer" class="text-dark fw-semibold"></span></div>
+                        <div><strong>Email:</strong> <span id="notLeadEmail" class="text-primary"></span></div>
+                    </div>
+                    <div class="alert alert-warning py-2 px-3 small mb-3" style="font-size: 0.78rem;">
+                        <i class="fa-solid fa-triangle-exclamation me-1"></i>
+                        This email will be removed from your leads list and will <strong>no longer be counted in Total Inquiries or Waiting for Reply</strong>.
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="exclude_domain" id="notLeadExcludeDomain" value="1">
+                        <label class="form-check-label small text-dark" for="notLeadExcludeDomain">
+                            Also blacklist domain <code id="notLeadDomainName" class="fw-bold text-danger"></code> in <strong>Excluded Domains</strong> so future emails are never counted as leads.
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer py-2 bg-light" style="border-radius: 0 0 12px 12px;">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger btn-sm fw-semibold">
+                        <i class="fa-solid fa-ban me-1"></i> Confirm: Not a Lead
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function openNotLeadModal(leadId, customerName, customerEmail) {
+    const form = document.getElementById('notLeadForm');
+    form.action = `/shipment-leads/leads/${leadId}/mark-not-lead`;
+    document.getElementById('notLeadCustomer').textContent = customerName;
+    document.getElementById('notLeadEmail').textContent = customerEmail;
+
+    let domain = '';
+    if (customerEmail && customerEmail.includes('@')) {
+        domain = customerEmail.split('@')[1].trim();
+    }
+    document.getElementById('notLeadDomainName').textContent = domain ? '@' + domain : '';
+    document.getElementById('notLeadExcludeDomain').checked = false;
+
+    const modal = new bootstrap.Modal(document.getElementById('notLeadModal'));
+    modal.show();
+}
+</script>
 @endsection

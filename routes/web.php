@@ -60,6 +60,7 @@ Route::middleware('auth')->group(function (): void {
         Route::patch('/leads/{id}/assign', [LeadController::class, 'assign'])->name('leads.assign')->whereNumber('id');
         Route::post('/leads/{id}/notes', [LeadController::class, 'addNote'])->name('leads.add-note')->whereNumber('id');
         Route::patch('/leads/{id}/extracted', [LeadController::class, 'updateExtracted'])->name('leads.update-extracted')->whereNumber('id');
+        Route::delete('/leads/{id}/mark-not-lead', [LeadController::class, 'markNotLead'])->name('leads.mark-not-lead')->whereNumber('id');
 
         // Email Synchronization & Logs
         Route::post('/sync', [EmailSyncController::class, 'sync'])->name('sync');

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\ShipmentLead;
 use App\Http\Controllers\Controller;
 use App\Models\ShipmentLead\Email;
 use App\Models\ShipmentLead\EmailAccount;
+use App\Models\ShipmentLead\ExcludedDomain;
 use App\Models\ShipmentLead\Lead;
 use App\Models\ShipmentLead\LeadNote;
 use App\Models\User;
@@ -164,5 +165,42 @@ class LeadController extends Controller
         ]));
 
         return redirect()->back()->with('success', 'Shipment details updated successfully!');
+    }
+
+    /**
+     * Mark a lead as "Not a Lead", removing it from all inquiry counts,
+     * with an option to also blacklist the sender domain.
+     */
+    public function markNotLead(Request $request, $id)
+    {
+        $lead = Lead::findOrFail($id);
+        $customerEmail = strtolower(trim((string) $lead->customer_email));
+
+        $addedDomainMsg = '';
+        if ($request->boolean('exclude_domain') && str_contains($customerEmail, '@')) {
+            $domain = substr(strrchr($customerEmail, '@'), 1);
+            $domain = ltrim(trim($domain), '@');
+            if (str_starts_with($domain, 'www.')) {
+                $domain = substr($domain, 4);
+            }
+            if (!empty($domain) && str_contains($domain, '.')) {
+                if (!ExcludedDomain::where('domain', $domain)->exists()) {
+                    ExcludedDomain::create([
+                        'domain' => $domain,
+                        'description' => "Blacklisted via 'Not a Lead' on Lead #{$lead->id}",
+                        'is_active' => true,
+                        'created_by' => Auth::id(),
+                    ]);
+                    $addedDomainMsg = " and domain '{$domain}' was added to Excluded Domains";
+                }
+            }
+        }
+
+        // Delete associated notes and lead record so it will never count as a lead
+        $lead->leadNotes()->delete();
+        $lead->delete();
+
+        return redirect()->route('shipment-leads.leads.index')
+            ->with('success', "Lead #{$id} has been marked as Not a Lead and removed from inquiry counts{$addedDomainMsg}!");
     }
 }
