@@ -191,9 +191,11 @@
                                     @endif
 
                                     @if($lead->reply_status === 'replied')
-                                        <span class="pill-status pill-replied">
-                                            <i class="fa-solid fa-circle-check me-1" style="font-size: 0.55rem;"></i>Replied
-                                        </span>
+                                        @if(!in_array($lead->lead_status, ['quotation_sent', 'final_lead']))
+                                            <span class="pill-status pill-replied">
+                                                <i class="fa-solid fa-circle-check me-1" style="font-size: 0.55rem;"></i>Replied
+                                            </span>
+                                        @endif
                                     @else
                                         <span class="pill-status pill-not-replied">
                                             <i class="fa-solid fa-circle-exclamation me-1" style="font-size: 0.55rem;"></i>Not Replied
@@ -212,7 +214,7 @@
                                         <span class="pill-status" style="background-color: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; font-weight: 600; font-size: 0.7rem;" title="Stage 1: New Inquiry">
                                             <i class="fa-solid fa-sparkles me-1" style="font-size: 0.6rem;"></i>New Lead
                                         </span>
-                                    @else
+                                    @elseif($lead->lead_status !== 'replied')
                                         <span class="pill-status pill-lead-status">
                                             {{ str_replace('_', ' ', $lead->lead_status) }}
                                         </span>

@@ -36,6 +36,9 @@ class LeadController extends Controller
 
         if ($request->filled('reply_status')) {
             $query->where('reply_status', $request->reply_status);
+            if ($request->reply_status === 'replied' && !$request->filled('lead_status')) {
+                $query->whereNotIn('lead_status', ['quotation_sent', 'final_lead']);
+            }
         }
 
         if ($request->filled('is_read')) {

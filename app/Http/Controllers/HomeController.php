@@ -22,7 +22,7 @@ class HomeController extends Controller
         $newToday = Lead::whereDate('received_date', $today)->count();
         $thisWeek = Lead::where('received_date', '>=', $startOfWeek)->count();
         $notRepliedCount = Lead::where('reply_status', 'not_replied')->count();
-        $repliedCount = Lead::where('reply_status', 'replied')->count();
+        $repliedCount = Lead::where('reply_status', 'replied')->whereNotIn('lead_status', ['quotation_sent', 'final_lead'])->count();
         $newLeadsCount = Lead::where('lead_status', 'new')->count();
         $quotationsSent = Lead::where('lead_status', 'quotation_sent')->count();
         $finalLeadsCount = Lead::where('lead_status', 'final_lead')->count();

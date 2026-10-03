@@ -496,4 +496,59 @@ class LeadService
 
         return $count;
     }
+
+    /**
+     * Synchronize and backfill lead stages across all leads in the database.
+     * Moves any lead with QGLT into 'quotation_sent' and QGLT + GLT into 'final_lead'.
+     *
+     * @return int Number of leads whose status was updated
+     */
+    public function syncAllLeadStages(): int
+    {
+        $leads = Lead::all();
+        $updatedCount = 0;
+
+        foreach ($leads as $lead) {
+            $stage = Lead::detectSubjectStage($lead->email_subject);
+
+            // Also check associated thread emails if subject on lead didn't have the code directly
+            if ($stage === 'new' && $lead->email && $lead->email->thread_id) {
+                $threadEmails = Email::where('email_account_id', $lead->email_account_id)
+                    ->where('thread_id', $lead->email->thread_id)
+                    ->get();
+                foreach ($threadEmails as $te) {
+                    $teStage = Lead::detectSubjectStage($te->subject);
+                    if ($teStage === 'final_lead') {
+                        $stage = 'final_lead';
+                        break;
+                    } elseif ($teStage === 'quotation_sent' && $stage !== 'final_lead') {
+                        $stage = 'quotation_sent';
+                    }
+                }
+            }
+
+            if ($stage === 'final_lead') {
+                if ($lead->lead_status !== 'final_lead') {
+                    $lead->update(['lead_status' => 'final_lead', 'reply_status' => 'replied']);
+                    $updatedCount++;
+                    Log::info("Synced Lead ID #{$lead->id} stage to 'final_lead' (Subject: '{$lead->email_subject}')");
+                }
+            } elseif ($stage === 'quotation_sent') {
+                if ($lead->lead_status !== 'quotation_sent') {
+                    $lead->update(['lead_status' => 'quotation_sent', 'reply_status' => 'replied']);
+                    $updatedCount++;
+                    Log::info("Synced Lead ID #{$lead->id} stage to 'quotation_sent' (Subject: '{$lead->email_subject}')");
+                }
+            } elseif (in_array($lead->lead_status, ['quotation_sent', 'final_lead'])) {
+                // If subject no longer matches QGLT / GLT, revert to replied or new
+                $target = ($lead->reply_status === 'replied') ? 'replied' : 'new';
+                $lead->update(['lead_status' => $target]);
+                $updatedCount++;
+                Log::info("Reverted Lead ID #{$lead->id} stage to '{$target}'");
+            }
+        }
+
+        return $updatedCount;
+    }
 }
+

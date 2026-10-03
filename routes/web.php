@@ -140,16 +140,10 @@ Route::get('/clear-cache', function () {
 
     // Sync/backfill lead stages based on subject codes (Stage 1: New, Stage 2: QGLT = Quotation Sent, Stage 3: QGLT+GLT = Final Lead, excluding GLTEXO)
     try {
-        $stageUpdated = 0;
-        $leads = \App\Models\ShipmentLead\Lead::all();
-        foreach ($leads as $lead) {
-            $stage = \App\Models\ShipmentLead\Lead::detectSubjectStage($lead->email_subject);
-            if (in_array($lead->lead_status, ['new', 'quotation_sent', 'final_lead']) && $lead->lead_status !== $stage) {
-                $lead->update(['lead_status' => $stage]);
-                $stageUpdated++;
-            }
-        }
-        $results[] = "Lead Stages: Evaluated " . count($leads) . " lead(s). Updated {$stageUpdated} lead stage(s) based on email subject codes.";
+        $leadService = app(\App\Services\Lead\LeadService::class);
+        $stageUpdated = $leadService->syncAllLeadStages();
+        $totalLeads = \App\Models\ShipmentLead\Lead::count();
+        $results[] = "Lead Stages: Evaluated {$totalLeads} lead(s). Updated {$stageUpdated} lead stage(s) (moved QGLT to Quotations and QGLT+GLT to Final Leads).";
     } catch (\Throwable $e) {
         $results[] = 'Stage evaluation notice: ' . $e->getMessage();
     }

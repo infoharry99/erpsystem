@@ -1055,6 +1055,97 @@ class ShipmentLeadTest extends TestCase
         $this->assertEquals('final_lead', $lead->lead_status);
         $this->assertStringContainsString('GLT2609876', $lead->email_subject);
     }
+
+    public function test_sync_all_lead_stages_moves_replied_leads_to_quotations_and_final_leads(): void
+    {
+        $account = EmailAccount::create([
+            'name' => 'General Operations',
+            'email' => 'ops@globetrottersltd.com',
+            'imap_host' => 'imap.company.com',
+            'imap_port' => 993,
+            'imap_username' => 'ops@globetrottersltd.com',
+            'imap_password' => 'secret123',
+            'inbox_folder' => 'INBOX',
+            'status' => 'active',
+        ]);
+
+        // Create 3 leads currently marked as 'replied' in database
+        $lead453 = Lead::create([
+            'email_account_id' => $account->id,
+            'customer_name' => 'Arya Mangalat',
+            'customer_email' => 'globaldesk1@flomicgroup.com',
+            'email_subject' => 'RE: MUM/SIFL/6287/09-26// Regarding Import Quotation_UK // Non - HAZ // (Sales Order - 33229) // QGLT2607085',
+            'shipment_type' => 'air_freight',
+            'lead_status' => 'replied',
+            'reply_status' => 'replied',
+            'received_date' => now(),
+        ]);
+
+        $lead405 = Lead::create([
+            'email_account_id' => $account->id,
+            'customer_name' => 'Umair Ahmad',
+            'customer_email' => 'umair@usifreight.com',
+            'email_subject' => 'Re: REQUEST // JD6417 // FRANCE - JEDDAH // 20 FT // DTP // ABAHSAIN- AWD-LF-177-26ES AWD-LF-177-26ES // QGLT2605312 // GLTEXO260786 // 80139579',
+            'shipment_type' => 'sea_fcl',
+            'lead_status' => 'replied',
+            'reply_status' => 'replied',
+            'received_date' => now(),
+        ]);
+
+        $leadFinal = Lead::create([
+            'email_account_id' => $account->id,
+            'customer_name' => 'Jeddah Client',
+            'customer_email' => 'jeddah@freight.com',
+            'email_subject' => 'Confirmed Booking // QGLT2605312 // GLT260786 // 80139579',
+            'shipment_type' => 'sea_fcl',
+            'lead_status' => 'replied',
+            'reply_status' => 'replied',
+            'received_date' => now(),
+        ]);
+
+        $leadStandardReplied = Lead::create([
+            'email_account_id' => $account->id,
+            'customer_name' => 'Standard Client',
+            'customer_email' => 'standard@client.com',
+            'email_subject' => 'RE: General Freight Query Antwerp to Singapore',
+            'shipment_type' => 'sea_fcl',
+            'lead_status' => 'replied',
+            'reply_status' => 'replied',
+            'received_date' => now(),
+        ]);
+
+        // Run syncAllLeadStages
+        $leadService = app(LeadService::class);
+        $updated = $leadService->syncAllLeadStages();
+        $this->assertEquals(3, $updated);
+
+        // Verify status changes
+        $this->assertEquals('quotation_sent', $lead453->fresh()->lead_status);
+        $this->assertEquals('quotation_sent', $lead405->fresh()->lead_status);
+        $this->assertEquals('final_lead', $leadFinal->fresh()->lead_status);
+        $this->assertEquals('replied', $leadStandardReplied->fresh()->lead_status);
+
+        // Verify "Replied" filter excludes quotation_sent and final_lead
+        $repliedResponse = $this->actingAs($this->user)->get(route('shipment-leads.leads.index', ['reply_status' => 'replied']));
+        $repliedResponse->assertOk();
+        $repliedResponse->assertSee('RE: General Freight Query Antwerp to Singapore');
+        $repliedResponse->assertDontSee('QGLT2607085');
+        $repliedResponse->assertDontSee('QGLT2605312');
+
+        // Verify Quotations filter includes the quotation leads
+        $quotationsResponse = $this->actingAs($this->user)->get(route('shipment-leads.leads.index', ['lead_status' => 'quotation_sent']));
+        $quotationsResponse->assertOk();
+        $quotationsResponse->assertSee('QGLT2607085');
+        $quotationsResponse->assertSee('QGLT2605312');
+        $quotationsResponse->assertDontSee('RE: General Freight Query Antwerp to Singapore');
+
+        // Verify Final Leads filter includes the final lead
+        $finalResponse = $this->actingAs($this->user)->get(route('shipment-leads.leads.index', ['lead_status' => 'final_lead']));
+        $finalResponse->assertOk();
+        $finalResponse->assertSee('Confirmed Booking // QGLT2605312 // GLT260786');
+        $finalResponse->assertDontSee('QGLT2607085');
+        $finalResponse->assertDontSee('RE: General Freight Query Antwerp to Singapore');
+    }
 }
 
 
