@@ -106,30 +106,32 @@
 
     <!-- Quotations Sent -->
     <div class="col-xl-3 col-md-6">
-        <div class="card card-modern shadow-sm h-100 p-3" style="border-left: 3.5px solid #f59e0b !important;">
-            <div class="d-flex justify-content-between align-items-start">
-                <div>
-                    <span class="text-uppercase text-warning fw-bold" style="font-size: 0.7rem; letter-spacing: 0.5px;">
-                        Quotations Sent
-                    </span>
-                    <h3 class="fw-bold text-dark m-0 my-1" style="font-size: 1.75rem;">
-                        {{ number_format($quotationsSent) }}
-                    </h3>
-                    <div class="text-muted" style="font-size: 0.75rem;">
-                        <span>In pricing & quotation stage</span>
+        <a href="{{ route('shipment-leads.leads.index', ['lead_status' => 'quotation_sent']) }}" class="text-decoration-none">
+            <div class="card card-modern shadow-sm h-100 p-3" style="border-left: 3.5px solid #f59e0b !important;">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <span class="text-uppercase text-warning fw-bold" style="font-size: 0.7rem; letter-spacing: 0.5px;">
+                            Quotations Sent (QGLT)
+                        </span>
+                        <h3 class="fw-bold text-dark m-0 my-1" style="font-size: 1.75rem;">
+                            {{ number_format($quotationsSent) }}
+                        </h3>
+                        <div class="text-muted" style="font-size: 0.75rem;">
+                            <span>In pricing & quotation stage</span>
+                        </div>
+                    </div>
+                    <div class="rounded-3 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; background: #fef3c7; color: #d97706;">
+                        <i class="fa-solid fa-file-invoice-dollar" style="font-size: 1.15rem;"></i>
                     </div>
                 </div>
-                <div class="rounded-3 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; background: #fef3c7; color: #d97706;">
-                    <i class="fa-solid fa-file-invoice-dollar" style="font-size: 1.15rem;"></i>
-                </div>
             </div>
-        </div>
+        </a>
     </div>
 </div>
 
 <!-- Row 2: Secondary Pipeline Metrics -->
 <div class="row g-2 mb-3">
-    <div class="col-md-3 col-6">
+    <div class="col-xl-2 col-md-4 col-6">
         <div class="card card-modern shadow-sm p-2 px-3">
             <div class="d-flex align-items-center justify-content-between">
                 <div>
@@ -142,44 +144,80 @@
             </div>
         </div>
     </div>
-    <div class="col-md-3 col-6">
-        <div class="card card-modern shadow-sm p-2 px-3">
-            <div class="d-flex align-items-center justify-content-between">
-                <div>
-                    <span class="text-muted text-uppercase fw-semibold" style="font-size: 0.68rem;">Booked Shipments</span>
-                    <h5 class="m-0 fw-bold text-dark" style="font-size: 1.1rem;">{{ number_format($bookedCount) }}</h5>
-                </div>
-                <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; background: #f3e8ff; color: #8b5cf6; font-size: 0.8rem;">
-                    <i class="fa-solid fa-truck-fast"></i>
+    <div class="col-xl-2 col-md-4 col-6">
+        <a href="{{ route('shipment-leads.leads.index', ['lead_status' => 'new']) }}" class="text-decoration-none">
+            <div class="card card-modern shadow-sm p-2 px-3">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <span class="text-primary text-uppercase fw-semibold" style="font-size: 0.68rem;">New Leads</span>
+                        <h5 class="m-0 fw-bold text-primary" style="font-size: 1.1rem;">{{ number_format($newLeadsCount) }}</h5>
+                    </div>
+                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; background: #e0f2fe; color: #0284c7; font-size: 0.8rem;">
+                        <i class="fa-solid fa-sparkles"></i>
+                    </div>
                 </div>
             </div>
-        </div>
+        </a>
     </div>
-    <div class="col-md-3 col-6">
-        <div class="card card-modern shadow-sm p-2 px-3">
-            <div class="d-flex align-items-center justify-content-between">
-                <div>
-                    <span class="text-muted text-uppercase fw-semibold" style="font-size: 0.68rem;">Won Deals</span>
-                    <h5 class="m-0 fw-bold text-success" style="font-size: 1.1rem;">{{ number_format($wonCount) }}</h5>
-                </div>
-                <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; background: #ecfdf5; color: #059669; font-size: 0.8rem;">
-                    <i class="fa-solid fa-trophy"></i>
+    <div class="col-xl-2 col-md-4 col-6">
+        <a href="{{ route('shipment-leads.leads.index', ['lead_status' => 'final_lead']) }}" class="text-decoration-none">
+            <div class="card card-modern shadow-sm p-2 px-3" style="border-left: 3px solid #8b5cf6 !important;">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <span class="text-uppercase fw-semibold" style="font-size: 0.68rem; color: #7c3aed;">Final Leads</span>
+                        <h5 class="m-0 fw-bold text-dark" style="font-size: 1.1rem;">{{ number_format($finalLeadsCount) }}</h5>
+                    </div>
+                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; background: #ede9fe; color: #7c3aed; font-size: 0.8rem;">
+                        <i class="fa-solid fa-flag-checkered"></i>
+                    </div>
                 </div>
             </div>
-        </div>
+        </a>
     </div>
-    <div class="col-md-3 col-6">
-        <div class="card card-modern shadow-sm p-2 px-3">
-            <div class="d-flex align-items-center justify-content-between">
-                <div>
-                    <span class="text-muted text-uppercase fw-semibold" style="font-size: 0.68rem;">Lost / Closed</span>
-                    <h5 class="m-0 fw-bold text-secondary" style="font-size: 1.1rem;">{{ number_format($lostCount) }}</h5>
-                </div>
-                <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; background: #f1f5f9; color: #64748b; font-size: 0.8rem;">
-                    <i class="fa-solid fa-circle-xmark"></i>
+    <div class="col-xl-2 col-md-4 col-6">
+        <a href="{{ route('shipment-leads.leads.index', ['lead_status' => 'booked']) }}" class="text-decoration-none">
+            <div class="card card-modern shadow-sm p-2 px-3">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <span class="text-muted text-uppercase fw-semibold" style="font-size: 0.68rem;">Booked Shipments</span>
+                        <h5 class="m-0 fw-bold text-dark" style="font-size: 1.1rem;">{{ number_format($bookedCount) }}</h5>
+                    </div>
+                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; background: #f3e8ff; color: #8b5cf6; font-size: 0.8rem;">
+                        <i class="fa-solid fa-truck-fast"></i>
+                    </div>
                 </div>
             </div>
-        </div>
+        </a>
+    </div>
+    <div class="col-xl-2 col-md-4 col-6">
+        <a href="{{ route('shipment-leads.leads.index', ['lead_status' => 'won']) }}" class="text-decoration-none">
+            <div class="card card-modern shadow-sm p-2 px-3">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <span class="text-muted text-uppercase fw-semibold" style="font-size: 0.68rem;">Won Deals</span>
+                        <h5 class="m-0 fw-bold text-success" style="font-size: 1.1rem;">{{ number_format($wonCount) }}</h5>
+                    </div>
+                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; background: #ecfdf5; color: #059669; font-size: 0.8rem;">
+                        <i class="fa-solid fa-trophy"></i>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-xl-2 col-md-4 col-6">
+        <a href="{{ route('shipment-leads.leads.index', ['lead_status' => 'lost']) }}" class="text-decoration-none">
+            <div class="card card-modern shadow-sm p-2 px-3">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <span class="text-muted text-uppercase fw-semibold" style="font-size: 0.68rem;">Lost / Closed</span>
+                        <h5 class="m-0 fw-bold text-secondary" style="font-size: 1.1rem;">{{ number_format($lostCount) }}</h5>
+                    </div>
+                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; background: #f1f5f9; color: #64748b; font-size: 0.8rem;">
+                        <i class="fa-solid fa-circle-xmark"></i>
+                    </div>
+                </div>
+            </div>
+        </a>
     </div>
 </div>
 

@@ -99,4 +99,55 @@ class Lead extends Model
         }
         return $this->received_date->diffForHumans();
     }
+
+    /**
+     * Detect the lead stage based on email subject codes:
+     * - Stage 1 (New Lead): Normal subject (default)
+     * - Stage 2 (Quotation Sent): Subject contains 'QGLT'
+     * - Stage 3 (Final Lead): Subject contains both 'QGLT' and 'GLT'
+     *
+     * Constraint: 'GLTEXO' must NOT be counted as 'GLT' and must not promote the stage to Final Lead.
+     */
+    public static function detectSubjectStage(?string $subject): string
+    {
+        if (empty($subject)) {
+            return 'new';
+        }
+
+        // 1. Detect QGLT (word boundary / non-alphanumeric preceding)
+        $hasQglt = (bool) preg_match('/(?<![A-Za-z0-9])QGLT/i', $subject);
+
+        // 2. Detect GLT as independent code, strictly excluding QGLT (preceding Q) and GLTEXO (following EXO)
+        $hasGlt  = (bool) preg_match('/(?<![A-Za-z0-9])GLT(?![\-_]?EXO)/i', $subject);
+
+        if ($hasQglt && $hasGlt) {
+            return 'final_lead';
+        }
+
+        if ($hasQglt) {
+            return 'quotation_sent';
+        }
+
+        return 'new';
+    }
+
+    public function getStageLabelAttribute(): string
+    {
+        return match ($this->lead_status) {
+            'new' => 'New Lead',
+            'quotation_sent' => 'Quotation Sent',
+            'final_lead' => 'Final Lead',
+            'booked' => 'Booked',
+            'won' => 'Won Deal',
+            'lost' => 'Lost',
+            'replied' => 'Replied',
+            'not_replied' => 'Not Replied',
+            'follow_up' => 'Follow Up',
+            'negotiation' => 'Negotiation',
+            'spam' => 'Spam',
+            'closed' => 'Closed',
+            default => ucwords(str_replace('_', ' ', $this->lead_status ?? 'New Lead')),
+        };
+    }
 }
+

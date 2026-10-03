@@ -261,12 +261,12 @@
 
             <!-- Quotations Sent -->
             <div class="col-xl-3 col-md-6">
-                <a href="{{ route('shipment-leads.leads.index', ['status' => 'quotation_sent']) }}" class="clickable-card h-100" title="Click to log in and view quotations sent">
+                <a href="{{ route('shipment-leads.leads.index', ['lead_status' => 'quotation_sent']) }}" class="clickable-card h-100" title="Click to log in and view quotations sent">
                     <div class="card card-modern shadow-sm h-100 p-3" style="border-left: 3.5px solid #f59e0b !important;">
                         <div class="d-flex justify-content-between align-items-start">
                             <div>
                                 <span class="text-uppercase text-warning fw-bold" style="font-size: 0.7rem; letter-spacing: 0.5px;">
-                                    Quotations Sent
+                                    Quotations Sent (QGLT)
                                 </span>
                                 <h3 class="fw-bold text-dark m-0 my-1" style="font-size: 1.75rem;">
                                     {{ number_format($quotationsSent) }}
@@ -284,9 +284,9 @@
             </div>
         </div>
 
-        <!-- ROW 2: SECONDARY PIPELINE CARDS (EXACT MATCH TO CLIENT REQUEST) -->
+        <!-- ROW 2: SECONDARY PIPELINE CARDS -->
         <div class="row g-2 mb-3">
-            <div class="col-md-3 col-6">
+            <div class="col-xl-2 col-md-4 col-6">
                 <a href="{{ route('shipment-leads.leads.index', ['date_from' => \Carbon\Carbon::today()->format('Y-m-d')]) }}" class="clickable-card" title="Click to view today's inquiries">
                     <div class="card card-modern shadow-sm p-2 px-3">
                         <div class="d-flex align-items-center justify-content-between">
@@ -301,8 +301,38 @@
                     </div>
                 </a>
             </div>
-            <div class="col-md-3 col-6">
-                <a href="{{ route('shipment-leads.leads.index', ['status' => 'booked']) }}" class="clickable-card" title="Click to view booked shipments">
+            <div class="col-xl-2 col-md-4 col-6">
+                <a href="{{ route('shipment-leads.leads.index', ['lead_status' => 'new']) }}" class="clickable-card" title="Click to view new leads">
+                    <div class="card card-modern shadow-sm p-2 px-3">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <span class="text-primary text-uppercase fw-semibold" style="font-size: 0.68rem;">New Leads</span>
+                                <h5 class="m-0 fw-bold text-primary" style="font-size: 1.1rem;">{{ number_format($newLeadsCount) }}</h5>
+                            </div>
+                            <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; background: #e0f2fe; color: #0284c7; font-size: 0.8rem;">
+                                <i class="fa-solid fa-sparkles"></i>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-xl-2 col-md-4 col-6">
+                <a href="{{ route('shipment-leads.leads.index', ['lead_status' => 'final_lead']) }}" class="clickable-card" title="Click to view final leads (QGLT + GLT)">
+                    <div class="card card-modern shadow-sm p-2 px-3" style="border-left: 3px solid #8b5cf6 !important;">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <span class="text-uppercase fw-semibold" style="font-size: 0.68rem; color: #7c3aed;">Final Leads</span>
+                                <h5 class="m-0 fw-bold text-dark" style="font-size: 1.1rem;">{{ number_format($finalLeadsCount) }}</h5>
+                            </div>
+                            <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; background: #ede9fe; color: #7c3aed; font-size: 0.8rem;">
+                                <i class="fa-solid fa-flag-checkered"></i>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-xl-2 col-md-4 col-6">
+                <a href="{{ route('shipment-leads.leads.index', ['lead_status' => 'booked']) }}" class="clickable-card" title="Click to view booked shipments">
                     <div class="card card-modern shadow-sm p-2 px-3">
                         <div class="d-flex align-items-center justify-content-between">
                             <div>
@@ -316,8 +346,8 @@
                     </div>
                 </a>
             </div>
-            <div class="col-md-3 col-6">
-                <a href="{{ route('shipment-leads.leads.index', ['status' => 'won']) }}" class="clickable-card" title="Click to view won deals">
+            <div class="col-xl-2 col-md-4 col-6">
+                <a href="{{ route('shipment-leads.leads.index', ['lead_status' => 'won']) }}" class="clickable-card" title="Click to view won deals">
                     <div class="card card-modern shadow-sm p-2 px-3">
                         <div class="d-flex align-items-center justify-content-between">
                             <div>
@@ -331,8 +361,8 @@
                     </div>
                 </a>
             </div>
-            <div class="col-md-3 col-6">
-                <a href="{{ route('shipment-leads.leads.index', ['status' => 'lost']) }}" class="clickable-card" title="Click to view lost/closed leads">
+            <div class="col-xl-2 col-md-4 col-6">
+                <a href="{{ route('shipment-leads.leads.index', ['lead_status' => 'lost']) }}" class="clickable-card" title="Click to view lost/closed leads">
                     <div class="card card-modern shadow-sm p-2 px-3">
                         <div class="d-flex align-items-center justify-content-between">
                             <div>

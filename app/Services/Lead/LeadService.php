@@ -40,6 +40,19 @@ class LeadService
         // Prevent duplicate leads if a lead with the same email subject already exists
         $existingLeadBySubject = $this->findExistingLeadBySubject($subject, $email);
         if ($existingLeadBySubject) {
+            $newStage = Lead::detectSubjectStage($subject);
+            $stageUpdates = [];
+            if ($newStage === 'final_lead' && $existingLeadBySubject->lead_status !== 'final_lead') {
+                $stageUpdates['lead_status'] = 'final_lead';
+                $stageUpdates['email_subject'] = $subject;
+            } elseif ($newStage === 'quotation_sent' && in_array($existingLeadBySubject->lead_status, ['new', 'not_replied', 'replied'])) {
+                $stageUpdates['lead_status'] = 'quotation_sent';
+                $stageUpdates['email_subject'] = $subject;
+            }
+            if (!empty($stageUpdates)) {
+                $existingLeadBySubject->update($stageUpdates);
+            }
+
             Log::info("Lead with same email subject already exists (Lead ID #{$existingLeadBySubject->id}, Subject: '{$existingLeadBySubject->email_subject}'). Skipping duplicate lead creation for Email ID #{$email->id}.");
             return $existingLeadBySubject;
         }
@@ -113,7 +126,7 @@ class LeadService
             'container_type' => $extracted['container_type'] ?? null,
             'shipment_date' => $extracted['shipment_date'] ?? null,
             'incoterms' => $extracted['incoterms'] ?? null,
-            'lead_status' => 'new',
+            'lead_status' => Lead::detectSubjectStage($email->subject ?? ''),
             'reply_status' => 'not_replied',
             'is_read' => (bool) ($email->is_read ?? false),
         ]);
@@ -205,9 +218,10 @@ class LeadService
         $subjectLower = strtolower($subject);
         $content = strtolower($subject . ' ' . $bodyText);
 
-        // 1. MUST HAVE: Inquiry Intent (RFQ, Quote, Rate, Pricing, Enquiry)
+        // 1. MUST HAVE: Inquiry Intent (RFQ, Quote, Rate, Pricing, Enquiry, QGLT)
         $hasInquiryIntent = (bool) preg_match('/\b(rfq|quote|quotation|rate|rates|pricing|cost|charges|inquiry|enquiry|enq\b|request|tariff)\b/i', $subjectLower)
-            || (bool) preg_match('/\b(please quote|quote request|rate request|rfq|pricing for|freight cost|best quote|air freight rate|ocean freight rate|fcl rate|lcl rate|enquiry below|inquiry below|charges for the enquiry|freight charges)\b/i', $content);
+            || (bool) preg_match('/(?<![A-Za-z0-9])(rfq|qglt)/i', $subjectLower)
+            || (bool) preg_match('/\b(please quote|quote request|rate request|rfq|quotation|pricing for|freight cost|best quote|air freight rate|ocean freight rate|fcl rate|lcl rate|enquiry below|inquiry below|charges for the enquiry|freight charges)\b/i', $content);
 
         if (!$hasInquiryIntent) {
             return false;
@@ -298,8 +312,20 @@ class LeadService
         // 2. Scan leads by normalized subject
         $leads = Lead::whereNotNull('email_subject')->get();
         foreach ($leads as $lead) {
-            if (self::normalizeSubject($lead->email_subject) === $normalized) {
+            $leadNorm = self::normalizeSubject($lead->email_subject);
+            if ($leadNorm === $normalized) {
                 return $lead;
+            }
+
+            // If the normalized subjects are related on the same thread (e.g. QGLT or GLT code was appended)
+            if (strlen($leadNorm) >= 15 && strlen($normalized) >= 15) {
+                if ($email && !empty($email->from_email) && !empty($lead->customer_email)
+                    && strtolower(trim($email->from_email)) === strtolower(trim($lead->customer_email))) {
+                    if (str_starts_with($normalized, $leadNorm) || str_starts_with($leadNorm, $normalized)
+                        || str_contains($normalized, $leadNorm) || str_contains($leadNorm, $normalized)) {
+                        return $lead;
+                    }
+                }
             }
         }
 
@@ -353,6 +379,17 @@ class LeadService
                     $updates['replied_at'] = $lead->replied_at;
                     $updates['replied_by_email_account_id'] = $lead->replied_by_email_account_id;
                     $updates['reply_message_id'] = $lead->reply_message_id;
+                }
+
+                // Check if duplicate lead has a more advanced subject stage (final_lead or quotation_sent)
+                $primaryStage = Lead::detectSubjectStage($primaryLead->email_subject);
+                $dupStage = Lead::detectSubjectStage($lead->email_subject);
+                if ($dupStage === 'final_lead' && $primaryStage !== 'final_lead') {
+                    $updates['lead_status'] = 'final_lead';
+                    $updates['email_subject'] = $lead->email_subject;
+                } elseif ($dupStage === 'quotation_sent' && in_array($primaryLead->lead_status, ['new', 'not_replied', 'replied'])) {
+                    $updates['lead_status'] = 'quotation_sent';
+                    $updates['email_subject'] = $lead->email_subject;
                 }
 
                 if (!empty($updates)) {

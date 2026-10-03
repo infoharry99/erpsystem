@@ -41,8 +41,14 @@
             <div class="col-lg-2 col-md-2">
                 <select name="lead_status" class="form-select form-select-sm" style="border-radius: 8px; font-size: 0.8125rem;">
                     <option value="">Lead Status</option>
-                    @foreach(['new', 'not_replied', 'replied', 'follow_up', 'quotation_sent', 'negotiation', 'booked', 'won', 'lost', 'spam', 'closed'] as $st)
-                        <option value="{{ $st }}" {{ request('lead_status') === $st ? 'selected' : '' }}>{{ str_replace('_', ' ', ucfirst($st)) }}</option>
+                    @foreach(['new', 'quotation_sent', 'final_lead', 'not_replied', 'replied', 'follow_up', 'negotiation', 'booked', 'won', 'lost', 'spam', 'closed'] as $st)
+                        <option value="{{ $st }}" {{ request('lead_status') === $st ? 'selected' : '' }}>
+                            @if($st === 'new') New Lead
+                            @elseif($st === 'quotation_sent') Quotation Sent (QGLT)
+                            @elseif($st === 'final_lead') Final Lead (QGLT + GLT)
+                            @else {{ str_replace('_', ' ', ucfirst($st)) }}
+                            @endif
+                        </option>
                     @endforeach
                 </select>
             </div>
@@ -194,9 +200,23 @@
                                         </span>
                                     @endif
 
-                                    <span class="pill-status pill-lead-status">
-                                        {{ str_replace('_', ' ', $lead->lead_status) }}
-                                    </span>
+                                    @if($lead->lead_status === 'final_lead')
+                                        <span class="pill-status" style="background-color: #ede9fe; color: #6d28d9; border: 1px solid #c4b5fd; font-weight: 600; font-size: 0.7rem;" title="Stage 3: Final Lead (QGLT + GLT)">
+                                            <i class="fa-solid fa-flag-checkered me-1" style="font-size: 0.6rem;"></i>Final Lead
+                                        </span>
+                                    @elseif($lead->lead_status === 'quotation_sent')
+                                        <span class="pill-status" style="background-color: #fef3c7; color: #b45309; border: 1px solid #fde68a; font-weight: 600; font-size: 0.7rem;" title="Stage 2: Quotation Sent (QGLT)">
+                                            <i class="fa-solid fa-file-invoice-dollar me-1" style="font-size: 0.6rem;"></i>Quotation Sent
+                                        </span>
+                                    @elseif($lead->lead_status === 'new')
+                                        <span class="pill-status" style="background-color: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; font-weight: 600; font-size: 0.7rem;" title="Stage 1: New Inquiry">
+                                            <i class="fa-solid fa-sparkles me-1" style="font-size: 0.6rem;"></i>New Lead
+                                        </span>
+                                    @else
+                                        <span class="pill-status pill-lead-status">
+                                            {{ str_replace('_', ' ', $lead->lead_status) }}
+                                        </span>
+                                    @endif
                                 </div>
                             </td>
 

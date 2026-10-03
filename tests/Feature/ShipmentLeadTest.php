@@ -813,5 +813,248 @@ class ShipmentLeadTest extends TestCase
             'is_active' => true,
         ]);
     }
+
+    public function test_detect_subject_stage_accurately_classifies_user_subjects_and_codes(): void
+    {
+        // 1. User provided exact examples (Quotation Sent - Stage 2)
+        $userSubject1 = 'RE: SMS260099 || R/O || RFQ26SMS0481 / SEA / FCL / EXW / C -AKE / UK - SOHAR // QGLT2607215 // GLTEXO261106 // 279167287';
+        $userSubject2 = "RE: Subject: Rate Request - Ex-Works Poland to ICD Patli | 1x40' Container / NEHADEL064 / QGLT2607346";
+        $userSubject3 = 'Re: REQUEST // JD6417 // FRANCE - JEDDAH // 20 FT // DTP // ABAHSAIN- AWD-LF-177-26ES AWD-LF-177-26ES // QGLT2605312 // GLTEXO260786 // 80139579';
+
+        $this->assertEquals('quotation_sent', Lead::detectSubjectStage($userSubject1));
+        $this->assertEquals('quotation_sent', Lead::detectSubjectStage($userSubject2));
+        $this->assertEquals('quotation_sent', Lead::detectSubjectStage($userSubject3));
+
+        // Additional user rule checks
+        $this->assertEquals('quotation_sent', Lead::detectSubjectStage('QGLT2607346'));
+        $this->assertEquals('quotation_sent', Lead::detectSubjectStage('QGLT2605312 + GLTEXO260786'));
+        $this->assertEquals('quotation_sent', Lead::detectSubjectStage('QGLT2607215 + GLTEXO261106'));
+
+        // 2. Stage 3 (Final Lead: QGLT + independent GLT code)
+        $this->assertEquals('final_lead', Lead::detectSubjectStage('QGLT2605312 + GLT260786'));
+        $this->assertEquals('final_lead', Lead::detectSubjectStage('RE: Freight // QGLT2607215 // GLTEXO261106 // GLT2609999'));
+        $this->assertEquals('final_lead', Lead::detectSubjectStage('QGLT2607346 and GLT-99881'));
+
+        // 3. Stage 1 (New Lead: Normal subject, or GLT without QGLT, or GLTEXO without QGLT)
+        $this->assertEquals('new', Lead::detectSubjectStage("Rate Request - Ex-Works Poland to ICD Patli | 1x40' Container / NEHADEL064"));
+        $this->assertEquals('new', Lead::detectSubjectStage('GLT260111 without previous quotation'));
+        $this->assertEquals('new', Lead::detectSubjectStage('GLTEXO260111 notification'));
+        $this->assertEquals('new', Lead::detectSubjectStage(''));
+        $this->assertEquals('new', Lead::detectSubjectStage(null));
+    }
+
+    public function test_create_lead_from_email_assigns_stage_based_on_subject(): void
+    {
+        $account = EmailAccount::create([
+            'name' => 'Import Dept',
+            'email' => 'import@globetrottersltd.com',
+            'imap_host' => 'imap.company.com',
+            'imap_port' => 993,
+            'imap_username' => 'import@globetrottersltd.com',
+            'imap_password' => 'secret123',
+            'inbox_folder' => 'INBOX',
+            'status' => 'active',
+        ]);
+
+        $leadService = app(LeadService::class);
+
+        // Lead 1: Stage 2 - Quotation Sent (contains QGLT and GLTEXO)
+        $email1 = Email::create([
+            'email_account_id' => $account->id,
+            'message_id' => '<msg-qglt-01@shipper.com>',
+            'direction' => 'incoming',
+            'from_name' => 'Sohar Cargo',
+            'from_email' => 'cargo@sohar.com',
+            'to_email' => 'import@globetrottersltd.com',
+            'subject' => 'RE: SMS260099 || R/O || RFQ26SMS0481 / SEA / FCL / EXW / C -AKE / UK - SOHAR // QGLT2607215 // GLTEXO261106 // 279167287',
+            'body_text' => 'Please note quotation QGLT2607215 for 1x40HQ container from UK to Sohar.',
+            'is_read' => false,
+        ]);
+
+        $lead1 = $leadService->createLeadFromEmail($email1);
+        $this->assertNotNull($lead1);
+        $this->assertEquals('quotation_sent', $lead1->lead_status);
+
+        // Lead 2: Stage 3 - Final Lead (contains QGLT and GLT)
+        $email2 = Email::create([
+            'email_account_id' => $account->id,
+            'message_id' => '<msg-final-02@shipper.com>',
+            'direction' => 'incoming',
+            'from_name' => 'Jeddah Client',
+            'from_email' => 'client@jeddahfreight.com',
+            'to_email' => 'import@globetrottersltd.com',
+            'subject' => 'Re: REQUEST // FRANCE - JEDDAH // 20 FT // QGLT2605312 // GLT260786 // 80139579',
+            'body_text' => 'We accept quotation QGLT2605312 and confirm booking 1x20ft container from France to Jeddah with file GLT260786.',
+            'is_read' => false,
+        ]);
+
+        $lead2 = $leadService->createLeadFromEmail($email2);
+        $this->assertNotNull($lead2);
+        $this->assertEquals('final_lead', $lead2->lead_status);
+
+        // Lead 3: Stage 1 - New Lead (normal inquiry)
+        $email3 = Email::create([
+            'email_account_id' => $account->id,
+            'message_id' => '<msg-new-03@shipper.com>',
+            'direction' => 'incoming',
+            'from_name' => 'Poland Trader',
+            'from_email' => 'trader@polandlogistics.pl',
+            'to_email' => 'import@globetrottersltd.com',
+            'subject' => "Rate Request - Ex-Works Poland to ICD Patli | 1x40' Container",
+            'body_text' => 'Kindly provide best ocean freight rate from Poland to ICD Patli for 1x40 container.',
+            'is_read' => false,
+        ]);
+
+        $lead3 = $leadService->createLeadFromEmail($email3);
+        $this->assertNotNull($lead3);
+        $this->assertEquals('new', $lead3->lead_status);
+    }
+
+    public function test_dashboard_and_public_home_show_stage_counts_and_filter(): void
+    {
+        $account = EmailAccount::create([
+            'name' => 'Main Mailbox',
+            'email' => 'main@globetrottersltd.com',
+            'imap_host' => 'imap.company.com',
+            'imap_port' => 993,
+            'imap_username' => 'main@globetrottersltd.com',
+            'imap_password' => 'secret123',
+            'inbox_folder' => 'INBOX',
+            'status' => 'active',
+        ]);
+
+        // Create 1 New, 1 Quotation Sent, 1 Final Lead
+        Lead::create([
+            'email_account_id' => $account->id,
+            'customer_name' => 'Client A',
+            'customer_email' => 'a@client.com',
+            'email_subject' => 'New Ocean Inquiry Hamburg to Dubai',
+            'shipment_type' => 'sea_fcl',
+            'lead_status' => 'new',
+            'reply_status' => 'not_replied',
+            'received_date' => now(),
+        ]);
+
+        Lead::create([
+            'email_account_id' => $account->id,
+            'customer_name' => 'Client B',
+            'customer_email' => 'b@client.com',
+            'email_subject' => 'RE: Rates // QGLT2607215 // GLTEXO261106',
+            'shipment_type' => 'sea_fcl',
+            'lead_status' => 'quotation_sent',
+            'reply_status' => 'replied',
+            'received_date' => now(),
+        ]);
+
+        Lead::create([
+            'email_account_id' => $account->id,
+            'customer_name' => 'Client C',
+            'customer_email' => 'c@client.com',
+            'email_subject' => 'Confirmed Order // QGLT2605312 // GLT260786',
+            'shipment_type' => 'sea_fcl',
+            'lead_status' => 'final_lead',
+            'reply_status' => 'replied',
+            'received_date' => now(),
+        ]);
+
+        // Verify Public Home Page
+        $homeRes = $this->get(route('home'));
+        $homeRes->assertOk();
+        $homeRes->assertSee('Quotations Sent (QGLT)');
+        $homeRes->assertSee('Final Leads');
+
+        // Verify Dashboard Page
+        $dashRes = $this->actingAs($this->user)->get(route('shipment-leads.dashboard'));
+        $dashRes->assertOk();
+        $dashRes->assertSee('Quotations Sent (QGLT)');
+        $dashRes->assertSee('Final Leads');
+
+        // Verify Leads Index filtered by Final Lead
+        $finalRes = $this->actingAs($this->user)->get(route('shipment-leads.leads.index', ['lead_status' => 'final_lead']));
+        $finalRes->assertOk();
+        $finalRes->assertSee('Confirmed Order // QGLT2605312 // GLT260786');
+        $finalRes->assertDontSee('New Ocean Inquiry Hamburg to Dubai');
+
+        // Verify Leads Index filtered by Quotation Sent
+        $quoteRes = $this->actingAs($this->user)->get(route('shipment-leads.leads.index', ['lead_status' => 'quotation_sent']));
+        $quoteRes->assertOk();
+        $quoteRes->assertSee('RE: Rates // QGLT2607215 // GLTEXO261106');
+        $quoteRes->assertDontSee('Confirmed Order // QGLT2605312 // GLT260786');
+    }
+
+    public function test_outgoing_reply_and_thread_emails_upgrade_lead_stage(): void
+    {
+        $account = EmailAccount::create([
+            'name' => 'Support',
+            'email' => 'sales@globetrottersltd.com',
+            'imap_host' => 'imap.company.com',
+            'imap_port' => 993,
+            'imap_username' => 'sales@globetrottersltd.com',
+            'imap_password' => 'secret123',
+            'inbox_folder' => 'INBOX',
+            'status' => 'active',
+        ]);
+
+        // 1. Initial Inquiry -> Stage 1: New Lead
+        $incoming = Email::create([
+            'email_account_id' => $account->id,
+            'message_id' => '<inquiry-poland-101@shipper.com>',
+            'direction' => 'incoming',
+            'from_name' => 'Nehade Log',
+            'from_email' => 'nehade@shipper.com',
+            'to_email' => 'sales@globetrottersltd.com',
+            'subject' => "Rate Request - Ex-Works Poland to ICD Patli | 1x40' Container / NEHADEL064",
+            'body_text' => "Please quote 1x40' container from Poland to ICD Patli.",
+            'is_read' => false,
+        ]);
+
+        $leadService = app(LeadService::class);
+        $lead = $leadService->createLeadFromEmail($incoming);
+        $this->assertNotNull($lead);
+        $this->assertEquals('new', $lead->lead_status);
+
+        // 2. Sales sends Outgoing Reply with Quotation Code QGLT2607346 -> Upgrades to Stage 2: Quotation Sent
+        $outgoingReply = Email::create([
+            'email_account_id' => $account->id,
+            'message_id' => '<reply-qglt-201@globetrottersltd.com>',
+            'in_reply_to' => '<inquiry-poland-101@shipper.com>',
+            'direction' => 'outgoing',
+            'from_name' => 'Sales Team',
+            'from_email' => 'sales@globetrottersltd.com',
+            'to_email' => 'nehade@shipper.com',
+            'subject' => "RE: Subject: Rate Request - Ex-Works Poland to ICD Patli | 1x40' Container / NEHADEL064 / QGLT2607346",
+            'body_text' => 'Dear customer, please find attached quotation QGLT2607346.',
+            'sent_at' => now(),
+        ]);
+
+        $replyService = app(\App\Services\Email\ReplyDetectionService::class);
+        $matched = $replyService->processOutgoingReply($outgoingReply);
+        $this->assertTrue($matched);
+
+        $lead->refresh();
+        $this->assertEquals('quotation_sent', $lead->lead_status);
+        $this->assertEquals('replied', $lead->reply_status);
+        $this->assertStringContainsString('QGLT2607346', $lead->email_subject);
+
+        // 3. Customer confirms and replies with GLT code -> Upgrades to Stage 3: Final Lead
+        $incomingFinal = Email::create([
+            'email_account_id' => $account->id,
+            'message_id' => '<confirm-final-301@shipper.com>',
+            'direction' => 'incoming',
+            'from_name' => 'Nehade Log',
+            'from_email' => 'nehade@shipper.com',
+            'to_email' => 'sales@globetrottersltd.com',
+            'subject' => "RE: Subject: Rate Request - Ex-Works Poland to ICD Patli | 1x40' Container / NEHADEL064 / QGLT2607346 // GLT2609876",
+            'body_text' => 'Quotation accepted, please book under GLT2609876 for 1x40ft container from Poland.',
+            'is_read' => false,
+        ]);
+
+        $leadAfterFinal = $leadService->createLeadFromEmail($incomingFinal);
+        $this->assertEquals($lead->id, $leadAfterFinal->id);
+        $lead->refresh();
+        $this->assertEquals('final_lead', $lead->lead_status);
+        $this->assertStringContainsString('GLT2609876', $lead->email_subject);
+    }
 }
+
 

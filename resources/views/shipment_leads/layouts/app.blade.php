@@ -438,7 +438,7 @@
                 </a>
             </li>
             <li>
-                <a href="{{ route('shipment-leads.leads.index') }}" class="nav-link {{ request()->routeIs('shipment-leads.leads.index') && !request()->has('reply_status') ? 'active' : '' }}">
+                <a href="{{ route('shipment-leads.leads.index') }}" class="nav-link {{ request()->routeIs('shipment-leads.leads.index') && !request()->has('reply_status') && !request()->has('lead_status') ? 'active' : '' }}">
                     <i class="fa-solid fa-list-check"></i> All Leads
                 </a>
             </li>
@@ -454,7 +454,12 @@
             </li>
             <li>
                 <a href="{{ route('shipment-leads.leads.index', ['lead_status' => 'quotation_sent']) }}" class="nav-link {{ request()->get('lead_status') === 'quotation_sent' ? 'active' : '' }}">
-                    <i class="fa-solid fa-file-invoice-dollar text-warning"></i> Quotations
+                    <i class="fa-solid fa-file-invoice-dollar text-warning"></i> Quotations (QGLT)
+                </a>
+            </li>
+            <li>
+                <a href="{{ route('shipment-leads.leads.index', ['lead_status' => 'final_lead']) }}" class="nav-link {{ request()->get('lead_status') === 'final_lead' ? 'active' : '' }}">
+                    <i class="fa-solid fa-flag-checkered" style="color: #8b5cf6;"></i> Final Leads (GLT)
                 </a>
             </li>
             <li>

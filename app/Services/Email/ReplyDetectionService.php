@@ -63,13 +63,30 @@ class ReplyDetectionService
         }
 
         if ($matchedLead) {
-            $matchedLead->update([
+            $outgoingStage = Lead::detectSubjectStage($outgoingEmail->subject);
+            $newLeadStatus = $matchedLead->lead_status;
+
+            if ($outgoingStage === 'final_lead') {
+                $newLeadStatus = 'final_lead';
+            } elseif ($outgoingStage === 'quotation_sent') {
+                $newLeadStatus = 'quotation_sent';
+            } elseif (in_array($matchedLead->lead_status, ['new', 'not_replied'])) {
+                $newLeadStatus = 'replied';
+            }
+
+            $updateData = [
                 'reply_status' => 'replied',
                 'replied_at' => $outgoingEmail->sent_at ?: $outgoingEmail->created_at,
                 'replied_by_email_account_id' => $outgoingEmail->email_account_id,
                 'reply_message_id' => $outgoingEmail->message_id,
-                'lead_status' => in_array($matchedLead->lead_status, ['new', 'not_replied']) ? 'replied' : $matchedLead->lead_status,
-            ]);
+                'lead_status' => $newLeadStatus,
+            ];
+
+            if ($outgoingStage !== 'new' && !empty($outgoingEmail->subject)) {
+                $updateData['email_subject'] = $outgoingEmail->subject;
+            }
+
+            $matchedLead->update($updateData);
 
             Log::info("Detected Reply for Lead ID #{$matchedLead->id} from Outgoing Email ID #{$outgoingEmail->id}");
             return true;

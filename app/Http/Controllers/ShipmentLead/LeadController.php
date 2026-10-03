@@ -107,7 +107,7 @@ class LeadController extends Controller
             ->get();
 
         $users = User::all();
-        $statuses = ['new', 'not_replied', 'replied', 'follow_up', 'quotation_sent', 'negotiation', 'booked', 'won', 'lost', 'spam', 'closed'];
+        $statuses = ['new', 'quotation_sent', 'final_lead', 'not_replied', 'replied', 'follow_up', 'negotiation', 'booked', 'won', 'lost', 'spam', 'closed'];
 
         return view('shipment_leads.leads.show', compact('lead', 'conversation', 'users', 'statuses'));
     }

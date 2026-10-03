@@ -20,7 +20,9 @@ class DashboardController extends Controller
         $thisWeek = Lead::where('received_date', '>=', $startOfWeek)->count();
         $notRepliedCount = Lead::where('reply_status', 'not_replied')->count();
         $repliedCount = Lead::where('reply_status', 'replied')->count();
+        $newLeadsCount = Lead::where('lead_status', 'new')->count();
         $quotationsSent = Lead::where('lead_status', 'quotation_sent')->count();
+        $finalLeadsCount = Lead::where('lead_status', 'final_lead')->count();
         $bookedCount = Lead::where('lead_status', 'booked')->count();
         $wonCount = Lead::where('lead_status', 'won')->count();
         $lostCount = Lead::where('lead_status', 'lost')->count();
@@ -44,7 +46,7 @@ class DashboardController extends Controller
             $leadsByDayCounts[] = Lead::whereDate('received_date', $date)->count();
         }
 
-        $statuses = ['new', 'not_replied', 'replied', 'follow_up', 'quotation_sent', 'negotiation', 'booked', 'won', 'lost', 'spam', 'closed'];
+        $statuses = ['new', 'quotation_sent', 'final_lead', 'not_replied', 'replied', 'follow_up', 'negotiation', 'booked', 'won', 'lost', 'spam', 'closed'];
         $statusCounts = [];
         foreach ($statuses as $status) {
             $statusCounts[ucwords(str_replace('_', ' ', $status))] = Lead::where('lead_status', $status)->count();
@@ -73,7 +75,9 @@ class DashboardController extends Controller
             'thisWeek',
             'notRepliedCount',
             'repliedCount',
+            'newLeadsCount',
             'quotationsSent',
+            'finalLeadsCount',
             'bookedCount',
             'wonCount',
             'lostCount',
