@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\ShipmentLead\CustomerReportController;
 use App\Http\Controllers\ShipmentLead\DashboardController;
 use App\Http\Controllers\ShipmentLead\EmailAccountController;
 use App\Http\Controllers\ShipmentLead\EmailSyncController;
@@ -61,6 +62,10 @@ Route::middleware('auth')->group(function (): void {
         Route::post('/leads/{id}/notes', [LeadController::class, 'addNote'])->name('leads.add-note')->whereNumber('id');
         Route::patch('/leads/{id}/extracted', [LeadController::class, 'updateExtracted'])->name('leads.update-extracted')->whereNumber('id');
         Route::delete('/leads/{id}/mark-not-lead', [LeadController::class, 'markNotLead'])->name('leads.mark-not-lead')->whereNumber('id');
+
+        // Customer-Wise Lead Reports
+        Route::get('/customer-reports', [CustomerReportController::class, 'index'])->name('customer-reports.index');
+        Route::get('/customer-reports/show', [CustomerReportController::class, 'show'])->name('customer-reports.show');
 
         // Email Synchronization & Logs
         Route::post('/sync', [EmailSyncController::class, 'sync'])->name('sync');

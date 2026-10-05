@@ -1146,6 +1146,105 @@ class ShipmentLeadTest extends TestCase
         $finalResponse->assertDontSee('QGLT2607085');
         $finalResponse->assertDontSee('RE: General Freight Query Antwerp to Singapore');
     }
+
+    public function test_customer_reports_index_and_details_with_tabs(): void
+    {
+        $account = EmailAccount::create([
+            'name' => 'Support Desk',
+            'email' => 'desk@company.com',
+            'imap_host' => 'imap.company.com',
+            'imap_port' => 993,
+            'imap_username' => 'desk@company.com',
+            'imap_password' => 'secret123',
+            'inbox_folder' => 'INBOX',
+            'sent_folder' => 'Sent',
+            'status' => 'active',
+        ]);
+
+        // Customer 1: Acme Logistics (2 leads: 1 quotation, 1 final)
+        Lead::create([
+            'email_account_id' => $account->id,
+            'customer_name' => 'Alice Acme',
+            'customer_email' => 'alice@acme.com',
+            'company_name' => 'Acme Logistics',
+            'email_subject' => 'Inquiry 1 // QGLT1001',
+            'shipment_type' => 'sea_fcl',
+            'lead_status' => 'quotation_sent',
+            'reply_status' => 'replied',
+            'received_date' => now()->subDays(2),
+        ]);
+
+        Lead::create([
+            'email_account_id' => $account->id,
+            'customer_name' => 'Alice Acme',
+            'customer_email' => 'alice@acme.com',
+            'company_name' => 'Acme Logistics',
+            'email_subject' => 'Inquiry 2 // QGLT1002 // GLT500',
+            'shipment_type' => 'air_freight',
+            'lead_status' => 'final_lead',
+            'reply_status' => 'replied',
+            'received_date' => now()->subDay(),
+        ]);
+
+        // Customer 2: Beta Industries (1 lead: new, not replied)
+        Lead::create([
+            'email_account_id' => $account->id,
+            'customer_name' => 'Bob Beta',
+            'customer_email' => 'bob@beta.com',
+            'company_name' => 'Beta Industries',
+            'email_subject' => 'Freight rate request from London to Dubai',
+            'shipment_type' => 'sea_lcl',
+            'lead_status' => 'new',
+            'reply_status' => 'not_replied',
+            'received_date' => now(),
+        ]);
+
+        // 1. Check Customer Reports Listing
+        $response = $this->actingAs($this->user)->get(route('shipment-leads.customer-reports.index'));
+        $response->assertOk();
+        $response->assertSee('Customer-Wise Lead Report');
+        $response->assertSee('alice@acme.com');
+        $response->assertSee('bob@beta.com');
+        $response->assertSee('Acme Logistics');
+        $response->assertSee('Beta Industries');
+
+        // Check Search Filter
+        $searchResponse = $this->actingAs($this->user)->get(route('shipment-leads.customer-reports.index', ['search' => 'acme']));
+        $searchResponse->assertOk();
+        $searchResponse->assertSee('alice@acme.com');
+        $searchResponse->assertDontSee('bob@beta.com');
+
+        // Check Stage Filter: has_quotations
+        $quoteFilterResponse = $this->actingAs($this->user)->get(route('shipment-leads.customer-reports.index', ['filter' => 'has_quotations']));
+        $quoteFilterResponse->assertOk();
+        $quoteFilterResponse->assertSee('alice@acme.com');
+        $quoteFilterResponse->assertDontSee('bob@beta.com');
+
+        // Check Stage Filter: unreplied_only
+        $unrepliedResponse = $this->actingAs($this->user)->get(route('shipment-leads.customer-reports.index', ['filter' => 'unreplied_only']));
+        $unrepliedResponse->assertOk();
+        $unrepliedResponse->assertSee('bob@beta.com');
+        $unrepliedResponse->assertDontSee('alice@acme.com');
+
+        // 2. Check Customer Details View with 4 tabs
+        $detailsResponse = $this->actingAs($this->user)->get(route('shipment-leads.customer-reports.show', ['email' => 'alice@acme.com']));
+        $detailsResponse->assertOk();
+        $detailsResponse->assertSee('Alice Acme');
+        $detailsResponse->assertSee('alice@acme.com');
+        $detailsResponse->assertSee('Acme Logistics');
+        $detailsResponse->assertSee('Inquiry 1 // QGLT1001');
+        $detailsResponse->assertSee('Inquiry 2 // QGLT1002 // GLT500');
+
+        // Check specific tab opening
+        $tabResponse = $this->actingAs($this->user)->get(route('shipment-leads.customer-reports.show', ['email' => 'alice@acme.com', 'tab' => 'quotations']));
+        $tabResponse->assertOk();
+        $tabResponse->assertSee('Quotation Leads');
+
+        // Check redirection on invalid email
+        $invalidEmailResponse = $this->actingAs($this->user)->get(route('shipment-leads.customer-reports.show', ['email' => 'nonexistent@nowhere.com']));
+        $invalidEmailResponse->assertRedirect(route('shipment-leads.customer-reports.index'));
+    }
 }
+
 
 

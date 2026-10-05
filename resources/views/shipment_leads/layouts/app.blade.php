@@ -463,6 +463,11 @@
                 </a>
             </li>
             <li>
+                <a href="{{ route('shipment-leads.customer-reports.index') }}" class="nav-link {{ request()->routeIs('shipment-leads.customer-reports*') ? 'active' : '' }}">
+                    <i class="fa-solid fa-users-viewfinder text-primary"></i> Customer Reports
+                </a>
+            </li>
+            <li>
                 <a href="{{ route('shipment-leads.accounts.index') }}" class="nav-link {{ request()->routeIs('shipment-leads.accounts*') ? 'active' : '' }}">
                     <i class="fa-solid fa-at"></i> Email Accounts
                 </a>
