@@ -40,10 +40,14 @@ class DashboardController extends Controller
 
         $dates = [];
         $leadsByDayCounts = [];
+        $repliedByDayCounts = [];
         for ($i = 13; $i >= 0; $i--) {
             $date = Carbon::today()->subDays($i);
             $dates[] = $date->format('M d');
             $leadsByDayCounts[] = Lead::whereDate('received_date', $date)->count();
+            $repliedByDayCounts[] = Lead::whereDate('received_date', $date)
+                ->where('reply_status', 'replied')
+                ->count();
         }
 
         $statuses = ['new', 'quotation_sent', 'final_lead', 'not_replied', 'replied', 'follow_up', 'negotiation', 'booked', 'won', 'lost', 'spam', 'closed'];
@@ -85,6 +89,7 @@ class DashboardController extends Controller
             'recentLeads',
             'dates',
             'leadsByDayCounts',
+            'repliedByDayCounts',
             'statusCounts',
             'mailboxData',
             'shipmentTypeCounts',

@@ -30,13 +30,17 @@ class HomeController extends Controller
         $wonCount = Lead::where('lead_status', 'won')->count();
         $lostCount = Lead::where('lead_status', 'lost')->count();
 
-        // 14-day intake trend
+        // 14-day intake and reply trend
         $dates = [];
         $leadsByDayCounts = [];
+        $repliedByDayCounts = [];
         for ($i = 13; $i >= 0; $i--) {
             $date = Carbon::today()->subDays($i);
             $dates[] = $date->format('M d');
             $leadsByDayCounts[] = Lead::whereDate('received_date', $date)->count();
+            $repliedByDayCounts[] = Lead::whereDate('received_date', $date)
+                ->where('reply_status', 'replied')
+                ->count();
         }
 
         // Status breakdown counts
@@ -72,6 +76,7 @@ class HomeController extends Controller
             'lostCount',
             'dates',
             'leadsByDayCounts',
+            'repliedByDayCounts',
             'statusCounts',
             'shipmentTypeCounts',
             'lastSyncTime'

@@ -112,6 +112,58 @@
     </div>
 </div>
 
+<!-- Interactive Customer Conversion Velocity Pipeline -->
+<div class="card card-modern shadow-sm p-3 mb-3">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <span class="fw-bold text-dark" style="font-size: 0.85rem;">
+            <i class="fa-solid fa-arrows-split-up-and-left text-primary me-1.5"></i> Customer Conversion Velocity Pipeline
+        </span>
+        <span class="text-muted" style="font-size: 0.72rem;">Conversion progression from customer accounts to bookings</span>
+    </div>
+    
+    <div class="row g-2 text-center align-items-center">
+        <div class="col">
+            <div class="p-2 rounded bg-light border">
+                <div class="text-muted fw-bold" style="font-size: 0.65rem; text-transform: uppercase;">1. Customers</div>
+                <div class="fw-bold text-dark fs-6 my-0.5">{{ number_format($totalUniqueCustomers) }}</div>
+                <span class="text-muted" style="font-size: 0.65rem;">Active Accounts</span>
+            </div>
+        </div>
+        <div class="col-auto text-muted"><i class="fa-solid fa-chevron-right" style="font-size: 0.7rem;"></i></div>
+        <div class="col">
+            <div class="p-2 rounded border" style="background: #f0f9ff; border-color: #bae6fd !important;">
+                <div class="text-primary fw-bold" style="font-size: 0.65rem; text-transform: uppercase;">2. Inquiries</div>
+                <div class="fw-bold text-primary fs-6 my-0.5">{{ number_format($totalLeads) }}</div>
+                <span class="text-muted" style="font-size: 0.65rem;">{{ $totalUniqueCustomers > 0 ? round($totalLeads / $totalUniqueCustomers, 1) : 0 }}/cust</span>
+            </div>
+        </div>
+        <div class="col-auto text-muted"><i class="fa-solid fa-chevron-right" style="font-size: 0.7rem;"></i></div>
+        <div class="col">
+            <div class="p-2 rounded border" style="background: #ecfdf5; border-color: #a7f3d0 !important;">
+                <div class="text-success fw-bold" style="font-size: 0.65rem; text-transform: uppercase;">3. Replied</div>
+                <div class="fw-bold text-success fs-6 my-0.5">{{ number_format($totalReplied) }}</div>
+                <span class="text-muted" style="font-size: 0.65rem;">{{ $totalLeads > 0 ? round(($totalReplied / $totalLeads) * 100, 1) : 0 }}% resp</span>
+            </div>
+        </div>
+        <div class="col-auto text-muted"><i class="fa-solid fa-chevron-right" style="font-size: 0.7rem;"></i></div>
+        <div class="col">
+            <div class="p-2 rounded border" style="background: #fef3c7; border-color: #fde68a !important;">
+                <div class="fw-bold" style="font-size: 0.65rem; text-transform: uppercase; color: #b45309;">4. Quotations (QGLT)</div>
+                <div class="fw-bold fs-6 my-0.5" style="color: #b45309;">{{ number_format($totalQuotations) }}</div>
+                <span class="text-muted" style="font-size: 0.65rem;">{{ $totalLeads > 0 ? round(($totalQuotations / $totalLeads) * 100, 1) : 0 }}% quote</span>
+            </div>
+        </div>
+        <div class="col-auto text-muted"><i class="fa-solid fa-chevron-right" style="font-size: 0.7rem;"></i></div>
+        <div class="col">
+            <div class="p-2 rounded border" style="background: #ede9fe; border-color: #c4b5fd !important;">
+                <div class="fw-bold" style="font-size: 0.65rem; text-transform: uppercase; color: #6d28d9;">5. Finalized (GLT)</div>
+                <div class="fw-bold fs-6 my-0.5" style="color: #6d28d9;">{{ number_format($totalFinal) }}</div>
+                <span class="text-muted" style="font-size: 0.65rem;">{{ $totalQuotations > 0 ? round(($totalFinal / $totalQuotations) * 100, 1) : 0 }}% win</span>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Search & Filtering Card -->
 <div class="card card-modern shadow-sm p-3 mb-3">
     <form method="GET" action="{{ route('shipment-leads.customer-reports.index') }}" class="row g-2 align-items-center">

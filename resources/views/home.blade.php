@@ -378,67 +378,202 @@
             </div>
         </div>
 
+        <!-- INTERACTIVE LEAD CONVERSION FUNNEL (PIPELINE VELOCITY) -->
+        <div class="card card-modern shadow-sm mb-3 p-3">
+            <div class="d-flex flex-wrap justify-content-between align-items-center mb-2.5">
+                <div>
+                    <h6 class="m-0 fw-bold text-dark" style="font-size: 0.88rem;">
+                        <i class="fa-solid fa-arrows-split-up-and-left text-primary me-1.5"></i> Lead Conversion Funnel (Pipeline Velocity)
+                    </h6>
+                    <span class="text-muted" style="font-size: 0.72rem;">Operational funnel progression from initial intake to quotation (QGLT) and confirmed booking (GLT)</span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-light text-secondary border" style="font-size: 0.7rem;">UK London Time</span>
+                </div>
+            </div>
+
+            <!-- Funnel Pipeline Steps -->
+            <div class="row g-2 align-items-center text-center">
+                <!-- Step 1: Total Intake -->
+                <div class="col-md-3 col-6">
+                    <a href="{{ route('shipment-leads.leads.index') }}" class="clickable-card h-100">
+                        <div class="p-2.5 rounded-3 border h-100" style="background: #f0f9ff; border-color: #bae6fd !important;">
+                            <div class="d-flex align-items-center justify-content-between mb-1">
+                                <span class="badge bg-white text-primary border px-2 py-0.5" style="font-size: 0.68rem; font-weight: 700;">STAGE 1</span>
+                                <i class="fa-solid fa-boxes-stacked text-primary" style="font-size: 0.85rem;"></i>
+                            </div>
+                            <div class="text-muted fw-bold" style="font-size: 0.7rem; text-transform: uppercase;">Total Intake</div>
+                            <h4 class="fw-bold text-dark my-1">{{ number_format($totalLeads) }}</h4>
+                            <span class="text-muted" style="font-size: 0.7rem;">100% of all inquiries</span>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- Step 2: Replied Inquiries -->
+                <div class="col-md-3 col-6">
+                    <a href="{{ route('shipment-leads.leads.index', ['reply_status' => 'replied']) }}" class="clickable-card h-100">
+                        <div class="p-2.5 rounded-3 border h-100" style="background: #ecfdf5; border-color: #a7f3d0 !important;">
+                            <div class="d-flex align-items-center justify-content-between mb-1">
+                                <span class="badge bg-white text-success border px-2 py-0.5" style="font-size: 0.68rem; font-weight: 700;">STAGE 2</span>
+                                <i class="fa-solid fa-circle-check text-success" style="font-size: 0.85rem;"></i>
+                            </div>
+                            <div class="text-success fw-bold" style="font-size: 0.7rem; text-transform: uppercase;">Replied Leads</div>
+                            <h4 class="fw-bold text-success my-1">{{ number_format($repliedCount + $quotationsSent + $finalLeadsCount) }}</h4>
+                            <span class="text-muted" style="font-size: 0.7rem;">
+                                {{ $totalLeads > 0 ? round((($repliedCount + $quotationsSent + $finalLeadsCount) / $totalLeads) * 100, 1) : 0 }}% response rate
+                            </span>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- Step 3: Quotations Sent (QGLT) -->
+                <div class="col-md-3 col-6">
+                    <a href="{{ route('shipment-leads.leads.index', ['lead_status' => 'quotation_sent']) }}" class="clickable-card h-100">
+                        <div class="p-2.5 rounded-3 border h-100" style="background: #fef3c7; border-color: #fde68a !important;">
+                            <div class="d-flex align-items-center justify-content-between mb-1">
+                                <span class="badge bg-white text-warning border px-2 py-0.5" style="font-size: 0.68rem; font-weight: 700; color: #b45309 !important;">STAGE 3</span>
+                                <i class="fa-solid fa-file-invoice-dollar text-warning" style="font-size: 0.85rem;"></i>
+                            </div>
+                            <div class="fw-bold" style="font-size: 0.7rem; text-transform: uppercase; color: #b45309;">Quotation Sent (QGLT)</div>
+                            <h4 class="fw-bold my-1" style="color: #b45309;">{{ number_format($quotationsSent) }}</h4>
+                            <span class="text-muted" style="font-size: 0.7rem;">
+                                {{ $totalLeads > 0 ? round(($quotationsSent / $totalLeads) * 100, 1) : 0 }}% of inquiries
+                            </span>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- Step 4: Final Leads (GLT) -->
+                <div class="col-md-3 col-6">
+                    <a href="{{ route('shipment-leads.leads.index', ['lead_status' => 'final_lead']) }}" class="clickable-card h-100">
+                        <div class="p-2.5 rounded-3 border h-100" style="background: #ede9fe; border-color: #c4b5fd !important;">
+                            <div class="d-flex align-items-center justify-content-between mb-1">
+                                <span class="badge bg-white border px-2 py-0.5" style="font-size: 0.68rem; font-weight: 700; color: #6d28d9 !important;">STAGE 4</span>
+                                <i class="fa-solid fa-flag-checkered" style="font-size: 0.85rem; color: #6d28d9;"></i>
+                            </div>
+                            <div class="fw-bold" style="font-size: 0.7rem; text-transform: uppercase; color: #6d28d9;">Final Leads (GLT)</div>
+                            <h4 class="fw-bold my-1" style="color: #6d28d9;">{{ number_format($finalLeadsCount) }}</h4>
+                            <span class="text-muted" style="font-size: 0.7rem;">
+                                {{ $totalLeads > 0 ? round(($finalLeadsCount / $totalLeads) * 100, 1) : 0 }}% conversion
+                            </span>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+
         <!-- ROW 3: CHARTS & OPERATIONAL BREAKDOWN -->
         <div class="row g-3 mb-3">
-            <!-- 14-Day Inquiry Intake Chart -->
+            <!-- 14-Day Dual-Series Inquiry Intake vs Response Trend Chart -->
             <div class="col-lg-8">
                 <div class="card card-modern shadow-sm p-3 h-100">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center mb-2.5 border-bottom pb-2">
                         <div>
                             <h6 class="fw-bold text-dark m-0" style="font-size: 0.88rem;">
-                                <i class="fa-solid fa-chart-line text-primary me-1"></i> Lead Volume Trend (Last 14 Days)
+                                <i class="fa-solid fa-chart-line text-primary me-1"></i> Inquiry Intake vs. Response Trend (Last 14 Days)
                             </h6>
-                            <span class="text-muted" style="font-size: 0.72rem;">Daily inquiry volume received from all connected inboxes</span>
+                            <span class="text-muted" style="font-size: 0.72rem;">Comparison of daily freight inquiries received vs sales replies dispatched</span>
                         </div>
-                        <span class="badge bg-light text-secondary border" style="font-size: 0.7rem;">UK London Time</span>
+                        <div class="d-flex align-items-center gap-1 mt-1 mt-sm-0" id="publicTrendChartToggle">
+                            <button type="button" class="btn btn-outline-secondary active btn-sm py-0.5 px-2" style="font-size: 0.72rem; border-radius: 6px;" onclick="togglePublicTrend('all', this)">All</button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm py-0.5 px-2" style="font-size: 0.72rem; border-radius: 6px;" onclick="togglePublicTrend('intake', this)">Inquiries</button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm py-0.5 px-2" style="font-size: 0.72rem; border-radius: 6px;" onclick="togglePublicTrend('replies', this)">Replies</button>
+                        </div>
                     </div>
-                    <div style="height: 220px; position: relative;">
+                    <div style="height: 250px; position: relative;">
                         <canvas id="publicLeadVolumeChart"></canvas>
                     </div>
                 </div>
             </div>
 
-            <!-- Freight Mode Breakdown -->
+            <!-- Stage Conversion Distribution Doughnut Chart -->
             <div class="col-lg-4">
                 <div class="card card-modern shadow-sm p-3 h-100">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="d-flex justify-content-between align-items-center mb-2 border-bottom pb-2">
                         <div>
                             <h6 class="fw-bold text-dark m-0" style="font-size: 0.88rem;">
-                                <i class="fa-solid fa-ship text-primary me-1"></i> Freight Mode Intake
+                                <i class="fa-solid fa-chart-pie text-primary me-1"></i> Stage Conversion Distribution
                             </h6>
-                            <span class="text-muted" style="font-size: 0.72rem;">Classification of inquiries by logistics mode</span>
+                            <span class="text-muted" style="font-size: 0.72rem;">Operational distribution across inquiry stages</span>
                         </div>
                     </div>
-                    <div class="d-flex flex-column justify-content-center gap-2 mt-2">
-                        @php
-                            $modeIcons = [
-                                'Sea FCL' => ['icon' => 'fa-ship', 'color' => '#0284c7'],
-                                'Sea LCL' => ['icon' => 'fa-boxes-stacked', 'color' => '#0ea5e9'],
-                                'Air Freight' => ['icon' => 'fa-plane', 'color' => '#6366f1'],
-                                'Road Freight' => ['icon' => 'fa-truck', 'color' => '#8b5cf6'],
-                                'Reefer' => ['icon' => 'fa-snowflake', 'color' => '#06b6d4'],
-                                'Other/Unknown' => ['icon' => 'fa-box', 'color' => '#94a3b8'],
-                            ];
-                        @endphp
-                        @foreach($shipmentTypeCounts as $mode => $cnt)
-                            @php
-                                $percent = $totalLeads > 0 ? round(($cnt / $totalLeads) * 100, 1) : 0;
-                                $info = $modeIcons[$mode] ?? ['icon' => 'fa-box', 'color' => '#64748b'];
-                            @endphp
-                            <div>
-                                <div class="d-flex justify-content-between align-items-center mb-1" style="font-size: 0.75rem;">
-                                    <span class="fw-semibold text-dark">
-                                        <i class="fa-solid {{ $info['icon'] }} me-1" style="color: {{ $info['color'] }}; width: 16px;"></i> {{ $mode }}
-                                    </span>
-                                    <span class="text-muted">{{ number_format($cnt) }} ({{ $percent }}%)</span>
-                                </div>
-                                <div class="progress" style="height: 5px; background-color: #f1f5f9;">
-                                    <div class="progress-bar" role="progressbar" style="width: {{ $percent }}%; background-color: {{ $info['color'] }};"></div>
-                                </div>
+                    <div class="d-flex flex-column align-items-center justify-content-between">
+                        <div style="height: 175px; width: 100%; position: relative;">
+                            <canvas id="publicLeadStageChart"></canvas>
+                            <div class="position-absolute top-50 start-50 translate-middle text-center" style="pointer-events: none;">
+                                <div class="fw-bold text-dark fs-4 m-0" style="line-height: 1;">{{ number_format($totalLeads) }}</div>
+                                <span class="text-muted" style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.5px;">Total Leads</span>
                             </div>
-                        @endforeach
+                        </div>
+
+                        <!-- Stage Legend Pills -->
+                        <div class="w-100 mt-2.5 d-flex flex-column gap-1">
+                            <div class="d-flex justify-content-between align-items-center px-2 py-1 rounded bg-light" style="font-size: 0.74rem;">
+                                <span class="fw-semibold text-dark"><span class="d-inline-block rounded-circle me-1.5" style="width: 8px; height: 8px; background: #0284c7;"></span> New Inquiries</span>
+                                <span class="text-muted fw-bold">{{ number_format($newLeadsCount) }} <span class="fw-normal text-secondary">({{ $totalLeads > 0 ? round(($newLeadsCount / $totalLeads) * 100, 1) : 0 }}%)</span></span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center px-2 py-1 rounded bg-light" style="font-size: 0.74rem;">
+                                <span class="fw-semibold text-dark"><span class="d-inline-block rounded-circle me-1.5" style="width: 8px; height: 8px; background: #ef4444;"></span> Waiting Reply</span>
+                                <span class="text-danger fw-bold">{{ number_format($notRepliedCount) }} <span class="fw-normal text-secondary">({{ $totalLeads > 0 ? round(($notRepliedCount / $totalLeads) * 100, 1) : 0 }}%)</span></span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center px-2 py-1 rounded bg-light" style="font-size: 0.74rem;">
+                                <span class="fw-semibold text-dark"><span class="d-inline-block rounded-circle me-1.5" style="width: 8px; height: 8px; background: #10b981;"></span> Replied</span>
+                                <span class="text-success fw-bold">{{ number_format($repliedCount) }} <span class="fw-normal text-secondary">({{ $totalLeads > 0 ? round(($repliedCount / $totalLeads) * 100, 1) : 0 }}%)</span></span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center px-2 py-1 rounded bg-light" style="font-size: 0.74rem;">
+                                <span class="fw-semibold text-dark"><span class="d-inline-block rounded-circle me-1.5" style="width: 8px; height: 8px; background: #f59e0b;"></span> Quotation Sent (QGLT)</span>
+                                <span class="text-warning fw-bold" style="color: #b45309 !important;">{{ number_format($quotationsSent) }} <span class="fw-normal text-secondary">({{ $totalLeads > 0 ? round(($quotationsSent / $totalLeads) * 100, 1) : 0 }}%)</span></span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center px-2 py-1 rounded bg-light" style="font-size: 0.74rem;">
+                                <span class="fw-semibold text-dark"><span class="d-inline-block rounded-circle me-1.5" style="width: 8px; height: 8px; background: #8b5cf6;"></span> Final Leads (GLT)</span>
+                                <span class="fw-bold" style="color: #6d28d9;">{{ number_format($finalLeadsCount) }} <span class="fw-normal text-secondary">({{ $totalLeads > 0 ? round(($finalLeadsCount / $totalLeads) * 100, 1) : 0 }}%)</span></span>
+                            </div>
+                        </div>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- ROW 3.5: FREIGHT MODE BREAKDOWN -->
+        <div class="card card-modern shadow-sm p-3 mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-2.5">
+                <div>
+                    <h6 class="fw-bold text-dark m-0" style="font-size: 0.88rem;">
+                        <i class="fa-solid fa-ship text-primary me-1"></i> Freight Mode & Equipment Intake Breakdown
+                    </h6>
+                    <span class="text-muted" style="font-size: 0.72rem;">Distribution across Air, Ocean FCL/LCL, Reefer, and Road freight modes</span>
+                </div>
+            </div>
+            <div class="row g-3">
+                @php
+                    $modeIcons = [
+                        'Sea FCL' => ['icon' => 'fa-ship', 'color' => '#0284c7'],
+                        'Sea LCL' => ['icon' => 'fa-boxes-stacked', 'color' => '#0ea5e9'],
+                        'Air Freight' => ['icon' => 'fa-plane', 'color' => '#6366f1'],
+                        'Road Freight' => ['icon' => 'fa-truck', 'color' => '#8b5cf6'],
+                        'Reefer' => ['icon' => 'fa-snowflake', 'color' => '#06b6d4'],
+                        'Other/Unknown' => ['icon' => 'fa-box', 'color' => '#94a3b8'],
+                    ];
+                @endphp
+                @foreach($shipmentTypeCounts as $mode => $cnt)
+                    @php
+                        $percent = $totalLeads > 0 ? round(($cnt / $totalLeads) * 100, 1) : 0;
+                        $info = $modeIcons[$mode] ?? ['icon' => 'fa-box', 'color' => '#64748b'];
+                    @endphp
+                    <div class="col-md-4 col-sm-6">
+                        <div class="p-2.5 rounded bg-light border">
+                            <div class="d-flex justify-content-between align-items-center mb-1.5" style="font-size: 0.78rem;">
+                                <span class="fw-semibold text-dark">
+                                    <i class="fa-solid {{ $info['icon'] }} me-1" style="color: {{ $info['color'] }}; width: 16px;"></i> {{ $mode }}
+                                </span>
+                                <span class="text-muted fw-bold">{{ number_format($cnt) }} <span class="fw-normal">({{ $percent }}%)</span></span>
+                            </div>
+                            <div class="progress" style="height: 6px; background-color: #e2e8f0; border-radius: 9999px;">
+                                <div class="progress-bar rounded-pill" role="progressbar" style="width: {{ $percent }}%; background-color: {{ $info['color'] }};"></div>
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
             </div>
         </div>
 
@@ -484,37 +619,157 @@
 
     <!-- Chart.js Logic -->
     <script>
-        const ctx = document.getElementById('publicLeadVolumeChart').getContext('2d');
-        new Chart(ctx, {
-            type: 'bar',
+        // Global Font Settings for Chart.js
+        Chart.defaults.font.family = "'Plus Jakarta Sans', system-ui, -apple-system, sans-serif";
+        Chart.defaults.font.size = 11;
+        Chart.defaults.color = "#64748b";
+
+        // 1. 14-Day Dual-Series Inquiry Intake vs. Response Trend
+        const ctxTrend = document.getElementById('publicLeadVolumeChart').getContext('2d');
+        const gradBlue = ctxTrend.createLinearGradient(0, 0, 0, 240);
+        gradBlue.addColorStop(0, 'rgba(2, 132, 199, 0.28)');
+        gradBlue.addColorStop(1, 'rgba(2, 132, 199, 0.01)');
+
+        const gradGreen = ctxTrend.createLinearGradient(0, 0, 0, 240);
+        gradGreen.addColorStop(0, 'rgba(16, 185, 129, 0.25)');
+        gradGreen.addColorStop(1, 'rgba(16, 185, 129, 0.01)');
+
+        window.publicTrendChart = new Chart(ctxTrend, {
+            type: 'line',
             data: {
                 labels: {!! json_encode($dates) !!},
+                datasets: [
+                    {
+                        label: 'Inquiries Intake',
+                        data: {!! json_encode($leadsByDayCounts) !!},
+                        borderColor: '#0284c7',
+                        backgroundColor: gradBlue,
+                        borderWidth: 2.5,
+                        pointBackgroundColor: '#0284c7',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 1.5,
+                        pointRadius: 3.5,
+                        pointHoverRadius: 6,
+                        fill: true,
+                        tension: 0.35
+                    },
+                    {
+                        label: 'Replies Dispatched',
+                        data: {!! json_encode($repliedByDayCounts) !!},
+                        borderColor: '#10b981',
+                        backgroundColor: gradGreen,
+                        borderWidth: 2.5,
+                        pointBackgroundColor: '#10b981',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 1.5,
+                        pointRadius: 3.5,
+                        pointHoverRadius: 6,
+                        fill: true,
+                        tension: 0.35
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        align: 'end',
+                        labels: {
+                            boxWidth: 10,
+                            usePointStyle: true,
+                            pointStyle: 'circle',
+                            padding: 12,
+                            font: { size: 11, weight: '600' }
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(15, 23, 42, 0.92)',
+                        titleFont: { size: 12, weight: 'bold' },
+                        bodyFont: { size: 11 },
+                        padding: 10,
+                        cornerRadius: 8,
+                        usePointStyle: true
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: { font: { size: 10 } }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        ticks: { stepSize: 1, precision: 0, font: { size: 10 } },
+                        grid: { color: '#f1f5f9' }
+                    }
+                }
+            }
+        });
+
+        window.togglePublicTrend = function(type, btn) {
+            if (!window.publicTrendChart) return;
+            document.querySelectorAll('#publicTrendChartToggle .btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            if (type === 'all') {
+                window.publicTrendChart.setDatasetVisibility(0, true);
+                window.publicTrendChart.setDatasetVisibility(1, true);
+            } else if (type === 'intake') {
+                window.publicTrendChart.setDatasetVisibility(0, true);
+                window.publicTrendChart.setDatasetVisibility(1, false);
+            } else if (type === 'replies') {
+                window.publicTrendChart.setDatasetVisibility(0, false);
+                window.publicTrendChart.setDatasetVisibility(1, true);
+            }
+            window.publicTrendChart.update();
+        };
+
+        // 2. Stage Conversion Distribution Doughnut Chart
+        const ctxPublicStage = document.getElementById('publicLeadStageChart').getContext('2d');
+        new Chart(ctxPublicStage, {
+            type: 'doughnut',
+            data: {
+                labels: ['New Inquiries', 'Waiting Reply', 'Replied', 'Quotation Sent (QGLT)', 'Final Leads (GLT)'],
                 datasets: [{
-                    label: 'Inquiries Received',
-                    data: {!! json_encode($leadsByDayCounts) !!},
-                    backgroundColor: 'rgba(2, 132, 199, 0.75)',
-                    borderColor: '#0284c7',
-                    borderWidth: 1,
-                    borderRadius: 4,
+                    data: [
+                        {{ (int)$newLeadsCount }},
+                        {{ (int)$notRepliedCount }},
+                        {{ (int)$repliedCount }},
+                        {{ (int)$quotationsSent }},
+                        {{ (int)$finalLeadsCount }}
+                    ],
+                    backgroundColor: ['#0284c7', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6'],
+                    borderWidth: 2,
+                    borderColor: '#ffffff',
+                    hoverOffset: 6
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: { display: false }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: { stepSize: 1, font: { size: 10 } },
-                        grid: { color: '#f1f5f9' }
-                    },
-                    x: {
-                        ticks: { font: { size: 10 } },
-                        grid: { display: false }
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: 'rgba(15, 23, 42, 0.92)',
+                        padding: 10,
+                        cornerRadius: 8,
+                        callbacks: {
+                            label: function(context) {
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const val = context.parsed;
+                                const pct = total > 0 ? Math.round((val / total) * 1000) / 10 : 0;
+                                return ' ' + context.label + ': ' + val + ' (' + pct + '%)';
+                            }
+                        }
                     }
-                }
+                },
+                cutout: '72%'
             }
         });
     </script>
